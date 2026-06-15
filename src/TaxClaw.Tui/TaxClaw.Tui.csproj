@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaxClaw.Core\TaxClaw.Core.csproj" />
+    <ProjectReference Include="..\TaxClaw.Llm\TaxClaw.Llm.csproj" />
+    <ProjectReference Include="..\TaxClaw.Agent\TaxClaw.Agent.csproj" />
+    <ProjectReference Include="..\TaxClaw.Storage\TaxClaw.Storage.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
