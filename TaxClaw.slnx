@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/TaxClaw.Agent/TaxClaw.Agent.csproj" />
+    <Project Path="src/TaxClaw.Calc.Scripting/TaxClaw.Calc.Scripting.csproj" />
+    <Project Path="src/TaxClaw.Calc/TaxClaw.Calc.csproj" />
     <Project Path="src/TaxClaw.Core/TaxClaw.Core.csproj" />
     <Project Path="src/TaxClaw.Llm/TaxClaw.Llm.csproj" />
     <Project Path="src/TaxClaw.Storage/TaxClaw.Storage.csproj" />
@@ -8,6 +10,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TaxClaw.Agent.Tests/TaxClaw.Agent.Tests.csproj" />
+    <Project Path="tests/TaxClaw.Calc.Tests/TaxClaw.Calc.Tests.csproj" />
     <Project Path="tests/TaxClaw.Core.Tests/TaxClaw.Core.Tests.csproj" />
     <Project Path="tests/TaxClaw.Llm.Tests/TaxClaw.Llm.Tests.csproj" />
     <Project Path="tests/TaxClaw.Storage.Tests/TaxClaw.Storage.Tests.csproj" />
