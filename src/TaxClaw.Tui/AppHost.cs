@@ -16,7 +16,8 @@ public sealed class AppHost(
     IProjectStore projects,
     LlmOptions llmOptions,
     Func<IChatClient> buildChatClient,
-    IModelCatalog? modelCatalog = null)
+    IModelCatalog? modelCatalog = null,
+    Func<CancellationToken, Task>? persistPreferences = null)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -61,7 +62,7 @@ public sealed class AppHost(
         // Explicit switch: /model <id>
         if (!string.IsNullOrWhiteSpace(modelId))
         {
-            SwitchModel(modelId.Trim());
+            await SwitchModelAsync(modelId.Trim(), ct);
             return;
         }
 
@@ -114,7 +115,7 @@ public sealed class AppHost(
         // Thinking effort: only offered for models that support it.
         string? effort = PromptForEffort(selected);
 
-        ApplyModelChange(selected.Id, effort);
+        await ApplyModelChangeAsync(selected.Id, effort, ct);
     }
 
     /// <summary>
@@ -173,13 +174,14 @@ public sealed class AppHost(
         _ => tokens.ToString()
     };
 
-    private void SwitchModel(string modelId) => ApplyModelChange(modelId, null);
+    private Task SwitchModelAsync(string modelId, CancellationToken ct) => ApplyModelChangeAsync(modelId, null, ct);
 
     /// <summary>
     /// Applies a model (and optional reasoning effort) change, rebuilding the chat client while
-    /// preserving conversation context. Rolls back both fields if the rebuild fails.
+    /// preserving conversation context, then persists the preference. Rolls back both fields if the
+    /// rebuild fails.
     /// </summary>
-    private void ApplyModelChange(string modelId, string? effort)
+    private async Task ApplyModelChangeAsync(string modelId, string? effort, CancellationToken ct)
     {
         string previousModel = llmOptions.Model;
         string? previousEffort = llmOptions.ReasoningEffort;
@@ -197,16 +199,30 @@ public sealed class AppHost(
         try
         {
             agent.UseClient(buildChatClient());
-            string effortNote = effort is { Length: > 0 } ? $", effort: {Markup.Escape(effort)}" : string.Empty;
-            AnsiConsole.MarkupLine(
-                $"[green]Switched model to[/] [teal]{Markup.Escape(llmOptions.Model)}[/][grey]{effortNote} (conversation context preserved).[/]");
         }
         catch (Exception ex)
         {
             llmOptions.Model = previousModel;
             llmOptions.ReasoningEffort = previousEffort;
             AnsiConsole.MarkupLine($"[yellow]Could not switch model: {Markup.Escape(ex.Message)}[/]");
+            return;
         }
+
+        if (persistPreferences is not null)
+        {
+            try
+            {
+                await persistPreferences(ct);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Model switched, but saving the preference failed: {Markup.Escape(ex.Message)}[/]");
+            }
+        }
+
+        string effortNote = effort is { Length: > 0 } ? $", effort: {Markup.Escape(effort)}" : string.Empty;
+        AnsiConsole.MarkupLine(
+            $"[green]Switched model to[/] [teal]{Markup.Escape(llmOptions.Model)}[/][grey]{effortNote} (conversation context preserved).[/]");
     }
 
     private async Task CreateProjectAsync(TaxYear year, CancellationToken ct)

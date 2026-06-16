@@ -16,6 +16,8 @@ public sealed class StorageRoot
 
     public string ProfileFile => System.IO.Path.Combine(Path, "profile.json");
 
+    public string PreferencesFile => System.IO.Path.Combine(Path, "preferences.json");
+
     public string ProjectsDirectory => System.IO.Path.Combine(Path, "projects");
 
     public string ProjectDirectory(string id) => System.IO.Path.Combine(ProjectsDirectory, id);

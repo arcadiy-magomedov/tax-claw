@@ -31,6 +31,11 @@ The interactive `/model` picker shows each model's context-window size and, for 
 **thinking effort** (reasoning), prompts you to choose a level (`low`/`medium`/`high`/`xhigh`, or the
 model default) after selection. Context-window size is a fixed model capability shown for reference.
 
+Your model and thinking-effort choice is **remembered across runs** — it's saved to
+`~/.tax-claw/preferences.json` whenever you switch with `/model`, and restored on the next launch.
+Precedence at startup is: code defaults → saved preferences → `TAXCLAW_Llm__*` env vars (env wins,
+so an env override applies for that run without changing your saved preference).
+
 The Copilot provider uses the official [`GitHub.Copilot.SDK`](https://github.com/github/copilot-sdk),
 which bundles the Copilot CLI runtime; it requires a GitHub Copilot subscription. Auth is resolved in
 order: `GITHUB_COPILOT_TOKEN` env var → `gh auth token` → the logged-in Copilot user.

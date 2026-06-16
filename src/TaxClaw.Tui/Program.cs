@@ -1,17 +1,29 @@
 ﻿using Microsoft.Extensions.Configuration;
 using TaxClaw.Agent;
+using TaxClaw.Core.Model;
 using TaxClaw.Llm;
 using TaxClaw.Storage;
 using TaxClaw.Tui;
 
-// Configuration is code-default first (GitHub Copilot / claude-opus-4.8), with optional env-var
-// overrides (e.g. TAXCLAW_Llm__Provider=openai). No config files — models are chosen at runtime
-// with the /model command.
+// Precedence: code defaults → saved preferences (~/.tax-claw/preferences.json) → env-var overrides.
+// No config files; the model/effort are chosen at runtime with /model and persisted across runs.
+var root = new StorageRoot();
+var preferencesStore = new JsonPreferencesStore(root);
+
+var llmOptions = new LlmOptions();
+Preferences? savedPreferences = await preferencesStore.LoadAsync();
+if (savedPreferences is not null)
+{
+    if (!string.IsNullOrWhiteSpace(savedPreferences.Provider)) llmOptions.Provider = savedPreferences.Provider;
+    if (!string.IsNullOrWhiteSpace(savedPreferences.Model)) llmOptions.Model = savedPreferences.Model;
+    llmOptions.ReasoningEffort = savedPreferences.ReasoningEffort;
+}
+
+// Env vars (TAXCLAW_Llm__*) override saved preferences and code defaults.
 IConfiguration config = new ConfigurationBuilder()
     .AddEnvironmentVariables(prefix: "TAXCLAW_")
     .Build();
-
-var llmOptions = config.GetSection("Llm").Get<LlmOptions>() ?? new LlmOptions();
+config.GetSection("Llm").Bind(llmOptions);
 
 var factory = new ChatClientFactory(llmOptions);
 var agent = new TaxClawAgent(factory.Create(), Prompts.System, MathTools.CreateTools());
@@ -26,11 +38,22 @@ if (askIndex >= 0 && askIndex + 1 < args.Length)
     return;
 }
 
-var root = new StorageRoot();
 var profiles = new JsonProfileStore(root);
 var projects = new JsonProjectStore(root);
+
+// Persist the model/effort whenever it changes via /model, so it survives restarts.
+async Task PersistPreferencesAsync(CancellationToken ct) =>
+    await preferencesStore.SaveAsync(
+        new Preferences
+        {
+            Provider = llmOptions.Provider,
+            Model = llmOptions.Model,
+            ReasoningEffort = llmOptions.ReasoningEffort
+        }, ct);
 
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
-await new AppHost(agent, profiles, projects, llmOptions, factory.Create, factory.CreateCatalog()).RunAsync(cts.Token);
+await new AppHost(
+    agent, profiles, projects, llmOptions,
+    factory.Create, factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);

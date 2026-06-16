@@ -60,6 +60,30 @@ public class JsonStoreTests : IDisposable
             () => store.CreateAsync(TaxYear.Of(2027), profile));
     }
 
+    [Fact]
+    public async Task Preferences_round_trip_through_disk()
+    {
+        var store = new JsonPreferencesStore(Root);
+        var prefs = new Preferences
+        {
+            Provider = "copilot",
+            Model = "claude-opus-4.8",
+            ReasoningEffort = "high"
+        };
+
+        await store.SaveAsync(prefs);
+        var loaded = await store.LoadAsync();
+
+        Assert.Equal(prefs, loaded);
+    }
+
+    [Fact]
+    public async Task Loading_missing_preferences_returns_null()
+    {
+        var store = new JsonPreferencesStore(Root);
+        Assert.Null(await store.LoadAsync());
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
