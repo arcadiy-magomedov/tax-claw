@@ -21,6 +21,7 @@ public static class CommandRouter
         {
             "/quit" or "/exit" => new QuitCommand(),
             "/new" => ParseNew(parts),
+            "/model" or "/models" => new ModelCommand(parts.Length > 1 ? parts[1].Trim() : null),
             _ => new UnknownCommand($"Unknown command '{verb}'.")
         };
     }

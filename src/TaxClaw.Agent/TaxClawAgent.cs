@@ -9,7 +9,7 @@ namespace TaxClaw.Agent;
 /// </summary>
 public sealed class TaxClawAgent
 {
-    private readonly IChatClient _client;
+    private IChatClient _client;
     private readonly List<ChatMessage> _history;
     private readonly ChatOptions _options;
 
@@ -18,6 +18,18 @@ public sealed class TaxClawAgent
         _client = baseClient.AsBuilder().UseFunctionInvocation().Build();
         _history = [new ChatMessage(ChatRole.System, systemPrompt)];
         _options = new ChatOptions { Tools = tools };
+    }
+
+    /// <summary>
+    /// Swaps the underlying chat client (e.g. to change model) while preserving the conversation
+    /// history and tools. The previously wrapped client is disposed so its resources — including any
+    /// spawned runtime process — are released.
+    /// </summary>
+    public void UseClient(IChatClient baseClient)
+    {
+        IChatClient previous = _client;
+        _client = baseClient.AsBuilder().UseFunctionInvocation().Build();
+        (previous as IDisposable)?.Dispose();
     }
 
     public async Task<string> SendAsync(string userMessage, CancellationToken ct = default)

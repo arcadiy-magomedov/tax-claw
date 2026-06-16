@@ -227,6 +227,7 @@
         "type": "Project",
         "dependencies": {
           "Azure.AI.OpenAI": "[2.1.0, )",
+          "GitHub.Copilot.SDK": "[1.0.1, )",
           "Microsoft.Extensions.AI": "[10.7.0, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.7.0, )",
           "OllamaSharp": "[5.4.25, )",
@@ -241,6 +242,16 @@
         "dependencies": {
           "Azure.Core": "1.44.1",
           "OpenAI": "2.1.0"
+        }
+      },
+      "GitHub.Copilot.SDK": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.1, )",
+        "resolved": "1.0.1",
+        "contentHash": "Ojs2nO7rBUKquwHpHAxSuniu03iZ1IYMrhJWc8+prhou5/FwrUYa5PHGgfcwlYh/i6+Y+xZChb9EcVTQHaCkJA==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.2.0",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.2"
         }
       },
       "Microsoft.Extensions.AI": {

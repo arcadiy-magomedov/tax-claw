@@ -7,6 +7,9 @@ public abstract record TuiCommand;
 
 public sealed record NewProjectCommand(TaxYear Year) : TuiCommand;
 
+/// <summary>Show the current model / list models (ModelId null) or switch to a model.</summary>
+public sealed record ModelCommand(string? ModelId) : TuiCommand;
+
 public sealed record ChatCommand(string Message) : TuiCommand;
 
 public sealed record QuitCommand : TuiCommand;

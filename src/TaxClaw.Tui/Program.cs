@@ -4,16 +4,17 @@ using TaxClaw.Llm;
 using TaxClaw.Storage;
 using TaxClaw.Tui;
 
+// Configuration is code-default first (GitHub Copilot / claude-opus-4.8), with optional env-var
+// overrides (e.g. TAXCLAW_Llm__Provider=openai). No config files — models are chosen at runtime
+// with the /model command.
 IConfiguration config = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false)
     .AddEnvironmentVariables(prefix: "TAXCLAW_")
     .Build();
 
 var llmOptions = config.GetSection("Llm").Get<LlmOptions>() ?? new LlmOptions();
 
-var chatClient = new ChatClientFactory(llmOptions).Create();
-var agent = new TaxClawAgent(chatClient, Prompts.System, MathTools.CreateTools());
+var factory = new ChatClientFactory(llmOptions);
+var agent = new TaxClawAgent(factory.Create(), Prompts.System, MathTools.CreateTools());
 
 // Non-interactive smoke test: `--ask "<prompt>"` sends one message and prints the reply.
 // Useful for validating an LLM provider (e.g. Copilot) without the interactive TUI prompts.
@@ -32,4 +33,4 @@ var projects = new JsonProjectStore(root);
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
-await new AppHost(agent, profiles, projects).RunAsync(cts.Token);
+await new AppHost(agent, profiles, projects, llmOptions, factory.Create, factory.CreateCatalog()).RunAsync(cts.Token);

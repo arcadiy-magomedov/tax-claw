@@ -34,4 +34,20 @@ public class CommandRouterTests
         var command = CommandRouter.Parse("/new notayear");
         Assert.IsType<UnknownCommand>(command);
     }
+
+    [Fact]
+    public void Parses_model_command_with_an_id()
+    {
+        var command = CommandRouter.Parse("/model claude-opus-4.8");
+        var model = Assert.IsType<ModelCommand>(command);
+        Assert.Equal("claude-opus-4.8", model.ModelId);
+    }
+
+    [Fact]
+    public void Bare_model_command_lists_models()
+    {
+        var command = CommandRouter.Parse("/model");
+        var model = Assert.IsType<ModelCommand>(command);
+        Assert.Null(model.ModelId);
+    }
 }

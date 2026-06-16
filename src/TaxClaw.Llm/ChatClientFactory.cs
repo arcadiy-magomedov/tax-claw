@@ -35,6 +35,13 @@ public sealed class ChatClientFactory(LlmOptions options) : IChatClientFactory
         _ => throw new NotSupportedException($"Unknown LLM provider '{options.Provider}'.")
     };
 
+    /// <summary>Returns a model catalog for providers that can enumerate models, else null.</summary>
+    public IModelCatalog? CreateCatalog() => options.Provider.ToLowerInvariant() switch
+    {
+        "copilot" => new CopilotModelCatalog(ResolveCopilotToken()),
+        _ => null
+    };
+
     /// <summary>
     /// Resolves a GitHub token for Copilot: explicit ApiKey, then the GITHUB_COPILOT_TOKEN env var,
     /// then `gh auth token`. Returns null to let the SDK fall back to the logged-in Copilot user.

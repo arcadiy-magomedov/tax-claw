@@ -18,28 +18,29 @@ dotnet run --project src/TaxClaw.Tui
 
 The interactive prompts require a real terminal.
 
-## Configure the LLM provider
+## LLM provider & models
 
-Edit `src/TaxClaw.Tui/appsettings.json` (or set `TAXCLAW_Llm__*` env vars):
+No config files. tax-claw defaults to **GitHub Copilot** with `claude-opus-4.8`, authenticated via the
+GitHub CLI — just run `gh auth login` once. Change the model at runtime in the TUI with the
+`/model` command:
 
-```json
-{ "Llm": { "Provider": "ollama", "Model": "llama3.1" } }
-```
+- `/model` — show the current model and list available models
+- `/model <id>` — switch model (conversation context is preserved), e.g. `/model gpt-5.5`
 
-Supported providers: `ollama`, `openai` (needs `ApiKey`), `azure` (needs `Endpoint` + `ApiKey`), `copilot` (GitHub Copilot models).
+The Copilot provider uses the official [`GitHub.Copilot.SDK`](https://github.com/github/copilot-sdk),
+which bundles the Copilot CLI runtime; it requires a GitHub Copilot subscription. Auth is resolved in
+order: `GITHUB_COPILOT_TOKEN` env var → `gh auth token` → the logged-in Copilot user.
 
-### GitHub Copilot provider
+### Overriding the provider (optional)
 
-Routes to Copilot models (e.g. `claude-opus-4.8`, `gpt-5.5`) via the official
-[`GitHub.Copilot.SDK`](https://github.com/github/copilot-sdk), which bundles the Copilot CLI runtime.
-Requires a GitHub Copilot subscription. Authentication is resolved in order:
-`ApiKey` → `GITHUB_COPILOT_TOKEN` env var → `gh auth token` → the logged-in Copilot user.
+Other providers (`ollama`, `openai`, `azure`) are available via `TAXCLAW_Llm__*` environment variables:
 
 ```bash
-# one-shot smoke test against Opus 4.8 (no interactive prompts)
-TAXCLAW_Llm__Provider=copilot TAXCLAW_Llm__Model=claude-opus-4.8 \
-  GITHUB_COPILOT_TOKEN="$(gh auth token)" \
-  dotnet run --project src/TaxClaw.Tui -- --ask "How are RSUs taxed in Czechia?"
+# one-shot smoke test against a different model (no interactive prompts)
+dotnet run --project src/TaxClaw.Tui -- --ask "How are RSUs taxed in Czechia?"
+
+# example: switch provider for a run
+TAXCLAW_Llm__Provider=ollama TAXCLAW_Llm__Model=llama3.1 dotnet run --project src/TaxClaw.Tui
 ```
 
 ## Test
