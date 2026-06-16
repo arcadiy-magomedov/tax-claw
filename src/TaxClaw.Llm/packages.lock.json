@@ -12,6 +12,16 @@
           "OpenAI": "2.1.0"
         }
       },
+      "GitHub.Copilot.SDK": {
+        "type": "Direct",
+        "requested": "[1.0.1, )",
+        "resolved": "1.0.1",
+        "contentHash": "Ojs2nO7rBUKquwHpHAxSuniu03iZ1IYMrhJWc8+prhou5/FwrUYa5PHGgfcwlYh/i6+Y+xZChb9EcVTQHaCkJA==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.2.0",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.2"
+        }
+      },
       "Microsoft.Extensions.AI": {
         "type": "Direct",
         "requested": "[10.7.0, )",

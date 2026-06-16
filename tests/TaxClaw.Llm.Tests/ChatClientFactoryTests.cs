@@ -34,4 +34,12 @@ public class ChatClientFactoryTests
         var options = new LlmOptions { Provider = "openai", Model = "gpt-4o" };
         Assert.Throws<ArgumentException>(() => new ChatClientFactory(options).Create());
     }
+
+    [Fact]
+    public void Copilot_provider_builds_a_chat_client()
+    {
+        var options = new LlmOptions { Provider = "copilot", Model = "claude-opus-4.8", ApiKey = "token" };
+        IChatClient client = new ChatClientFactory(options).Create();
+        Assert.IsType<CopilotChatClient>(client);
+    }
 }
