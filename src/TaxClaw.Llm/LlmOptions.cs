@@ -8,6 +8,12 @@ public sealed class LlmOptions
 
     public string Model { get; set; } = "claude-opus-4.8";
 
+    /// <summary>
+    /// Reasoning/thinking effort for models that support it: "low", "medium", "high", "xhigh".
+    /// Null uses the model's default. Ignored by models without reasoning effort.
+    /// </summary>
+    public string? ReasoningEffort { get; set; }
+
     /// <summary>Required for "azure"; optional override for "ollama" (defaults to localhost).</summary>
     public string? Endpoint { get; set; }
 

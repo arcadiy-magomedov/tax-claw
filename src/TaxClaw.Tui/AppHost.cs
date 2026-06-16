@@ -111,7 +111,39 @@ public sealed class AppHost(
             return;
         }
 
-        SwitchModel(selected.Id);
+        // Thinking effort: only offered for models that support it.
+        string? effort = PromptForEffort(selected);
+
+        ApplyModelChange(selected.Id, effort);
+    }
+
+    /// <summary>
+    /// Prompts for a reasoning/thinking effort when the model supports it. Returns the chosen effort,
+    /// or null to use the model's default. Returns null immediately for non-reasoning models.
+    /// </summary>
+    private static string? PromptForEffort(ModelOption model)
+    {
+        if (!model.SupportsReasoningEffort)
+        {
+            return null;
+        }
+
+        const string useDefault = "(model default)";
+        var choices = new List<string> { useDefault };
+        choices.AddRange(model.SupportedReasoningEfforts);
+
+        string defaultLabel = model.DefaultReasoningEffort is { Length: > 0 } d
+            ? $"{useDefault} → {d}"
+            : useDefault;
+
+        string pick = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title($"Thinking effort for [teal]{Markup.Escape(model.Name)}[/] [grey](↑/↓, Enter)[/]:")
+                .PageSize(10)
+                .UseConverter(c => Markup.Escape(c == useDefault ? defaultLabel : c))
+                .AddChoices(choices));
+
+        return pick == useDefault ? null : pick;
     }
 
     private string FormatChoice(ModelOption m)
@@ -119,28 +151,60 @@ public sealed class AppHost(
         string current = string.Equals(m.Id, llmOptions.Model, StringComparison.OrdinalIgnoreCase)
             ? "  (current)"
             : string.Empty;
-        return $"{m.Name} — {m.Id}{current}";
+
+        var tags = new List<string>();
+        if (m.MaxContextWindowTokens is long ctx)
+        {
+            tags.Add($"ctx {FormatTokens(ctx)}");
+        }
+        if (m.SupportsReasoningEffort)
+        {
+            tags.Add("reasoning");
+        }
+        string suffix = tags.Count > 0 ? $"  [{string.Join(", ", tags)}]" : string.Empty;
+
+        return $"{m.Name} — {m.Id}{suffix}{current}";
     }
 
-    private void SwitchModel(string modelId)
+    private static string FormatTokens(long tokens) => tokens switch
     {
-        string previous = llmOptions.Model;
-        if (string.Equals(modelId, previous, StringComparison.OrdinalIgnoreCase))
+        >= 1_000_000 => $"{tokens / 1_000_000.0:0.#}M",
+        >= 1_000 => $"{tokens / 1_000.0:0.#}K",
+        _ => tokens.ToString()
+    };
+
+    private void SwitchModel(string modelId) => ApplyModelChange(modelId, null);
+
+    /// <summary>
+    /// Applies a model (and optional reasoning effort) change, rebuilding the chat client while
+    /// preserving conversation context. Rolls back both fields if the rebuild fails.
+    /// </summary>
+    private void ApplyModelChange(string modelId, string? effort)
+    {
+        string previousModel = llmOptions.Model;
+        string? previousEffort = llmOptions.ReasoningEffort;
+
+        bool sameModel = string.Equals(modelId, previousModel, StringComparison.OrdinalIgnoreCase);
+        bool sameEffort = string.Equals(effort, previousEffort, StringComparison.OrdinalIgnoreCase);
+        if (sameModel && sameEffort)
         {
             AnsiConsole.MarkupLine($"[grey]Already using [/][teal]{Markup.Escape(modelId)}[/][grey].[/]");
             return;
         }
 
         llmOptions.Model = modelId;
+        llmOptions.ReasoningEffort = effort;
         try
         {
             agent.UseClient(buildChatClient());
+            string effortNote = effort is { Length: > 0 } ? $", effort: {Markup.Escape(effort)}" : string.Empty;
             AnsiConsole.MarkupLine(
-                $"[green]Switched model to[/] [teal]{Markup.Escape(llmOptions.Model)}[/] [grey](conversation context preserved).[/]");
+                $"[green]Switched model to[/] [teal]{Markup.Escape(llmOptions.Model)}[/][grey]{effortNote} (conversation context preserved).[/]");
         }
         catch (Exception ex)
         {
-            llmOptions.Model = previous;
+            llmOptions.Model = previousModel;
+            llmOptions.ReasoningEffort = previousEffort;
             AnsiConsole.MarkupLine($"[yellow]Could not switch model: {Markup.Escape(ex.Message)}[/]");
         }
     }

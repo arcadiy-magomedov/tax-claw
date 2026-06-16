@@ -30,7 +30,7 @@ public sealed class ChatClientFactory(LlmOptions options) : IChatClientFactory
             .AsIChatClient(),
 
         // Routes to GitHub Copilot models (e.g. "claude-opus-4.8") via the official Copilot SDK.
-        "copilot" => new CopilotChatClient(options.Model, ResolveCopilotToken()),
+        "copilot" => new CopilotChatClient(options.Model, ResolveCopilotToken(), options.ReasoningEffort),
 
         _ => throw new NotSupportedException($"Unknown LLM provider '{options.Provider}'.")
     };

@@ -1,7 +1,18 @@
 namespace TaxClaw.Llm;
 
-/// <summary>A selectable model: its provider-specific id and a human-friendly display name.</summary>
-public readonly record struct ModelOption(string Id, string Name);
+/// <summary>
+/// A selectable model: its provider id, display name, the reasoning-effort levels it supports
+/// (empty when the model has no reasoning effort), its default effort, and its fixed context window.
+/// </summary>
+public sealed record ModelOption(
+    string Id,
+    string Name,
+    IReadOnlyList<string> SupportedReasoningEfforts,
+    string? DefaultReasoningEffort,
+    long? MaxContextWindowTokens)
+{
+    public bool SupportsReasoningEffort => SupportedReasoningEfforts.Count > 0;
+}
 
 /// <summary>
 /// Lists the models a provider exposes, for the TUI's <c>/model</c> command. Implemented only by

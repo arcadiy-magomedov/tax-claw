@@ -27,6 +27,10 @@ GitHub CLI — just run `gh auth login` once. Change the model at runtime in the
 - `/model` — show the current model and list available models
 - `/model <id>` — switch model (conversation context is preserved), e.g. `/model gpt-5.5`
 
+The interactive `/model` picker shows each model's context-window size and, for models that support
+**thinking effort** (reasoning), prompts you to choose a level (`low`/`medium`/`high`/`xhigh`, or the
+model default) after selection. Context-window size is a fixed model capability shown for reference.
+
 The Copilot provider uses the official [`GitHub.Copilot.SDK`](https://github.com/github/copilot-sdk),
 which bundles the Copilot CLI runtime; it requires a GitHub Copilot subscription. Auth is resolved in
 order: `GITHUB_COPILOT_TOKEN` env var → `gh auth token` → the logged-in Copilot user.

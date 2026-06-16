@@ -20,16 +20,18 @@ public sealed class CopilotChatClient : IChatClient
 {
     private readonly string _model;
     private readonly string? _gitHubToken;
+    private readonly string? _reasoningEffort;
     private readonly SemaphoreSlim _startGate = new(1, 1);
     private CopilotClient? _client;
     private bool _disposed;
 
-    public CopilotChatClient(string model, string? gitHubToken = null)
+    public CopilotChatClient(string model, string? gitHubToken = null, string? reasoningEffort = null)
     {
         _model = string.IsNullOrWhiteSpace(model)
             ? throw new ArgumentException("A Copilot model id is required.", nameof(model))
             : model;
         _gitHubToken = string.IsNullOrWhiteSpace(gitHubToken) ? null : gitHubToken;
+        _reasoningEffort = string.IsNullOrWhiteSpace(reasoningEffort) ? null : reasoningEffort;
     }
 
     public async Task<ChatResponse> GetResponseAsync(
@@ -48,6 +50,10 @@ public sealed class CopilotChatClient : IChatClient
             Model = _model,
             OnPermissionRequest = DenyAllTools
         };
+        if (_reasoningEffort is not null)
+        {
+            config.ReasoningEffort = _reasoningEffort;
+        }
         if (!string.IsNullOrWhiteSpace(system))
         {
             config.SystemMessage = new SystemMessageConfig

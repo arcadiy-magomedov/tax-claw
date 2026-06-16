@@ -20,6 +20,20 @@ public sealed class CopilotModelCatalog(string? gitHubToken = null) : IModelCata
         await client.StartAsync(ct);
 
         var models = await client.ListModelsAsync(ct);
-        return models.Select(m => new ModelOption(m.Id, m.Name)).ToList();
+        return models.Select(ToOption).ToList();
+    }
+
+    private static ModelOption ToOption(GitHub.Copilot.ModelInfo m)
+    {
+        IReadOnlyList<string> efforts = m.SupportedReasoningEfforts is { Count: > 0 } supported
+            ? supported.Select(e => e.ToString()!).ToList()
+            : [];
+
+        return new ModelOption(
+            m.Id,
+            m.Name,
+            efforts,
+            m.DefaultReasoningEffort?.ToString(),
+            m.Capabilities?.Limits?.MaxContextWindowTokens);
     }
 }
