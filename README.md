@@ -36,9 +36,13 @@ Your model and thinking-effort choice is **remembered across runs** — it's sav
 Precedence at startup is: code defaults → saved preferences → `TAXCLAW_Llm__*` env vars (env wins,
 so an env override applies for that run without changing your saved preference).
 
-The Copilot provider uses the official [`GitHub.Copilot.SDK`](https://github.com/github/copilot-sdk),
-which bundles the Copilot CLI runtime; it requires a GitHub Copilot subscription. Auth is resolved in
-order: `GITHUB_COPILOT_TOKEN` env var → `gh auth token` → the logged-in Copilot user.
+The agent is built on the **[Microsoft Agent Framework](https://learn.microsoft.com/agent-framework/)**
+(`Microsoft.Agents.AI`, GA) over a provider-agnostic `IChatClient`. The Copilot provider uses the
+official [`Microsoft.Agents.AI.GitHub.Copilot`](https://www.nuget.org/packages/Microsoft.Agents.AI.GitHub.Copilot)
+package (which bundles the Copilot CLI runtime) so tax-claw's own tools (decimal math, …) run through
+the agent's function-calling; built-in Copilot CLI capabilities (shell, file, url) stay disabled. It
+requires a GitHub Copilot subscription. Auth is resolved in order: `GITHUB_COPILOT_TOKEN` env var →
+`gh auth token` → the logged-in Copilot user.
 
 ### Overriding the provider (optional)
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.Configuration;
 using TaxClaw.Agent;
 using TaxClaw.Core.Model;
 using TaxClaw.Llm;
@@ -25,8 +26,10 @@ IConfiguration config = new ConfigurationBuilder()
     .Build();
 config.GetSection("Llm").Bind(llmOptions);
 
-var factory = new ChatClientFactory(llmOptions);
-var agent = new TaxClawAgent(factory.Create(), Prompts.System, MathTools.CreateTools());
+var factory = new AgentFactory(llmOptions);
+var tools = MathTools.CreateTools();
+AIAgent BuildAgent() => factory.CreateAgent(Prompts.System, tools);
+await using var agent = new TaxClawAgent(BuildAgent());
 
 // Non-interactive smoke test: `--ask "<prompt>"` sends one message and prints the reply.
 // Useful for validating an LLM provider (e.g. Copilot) without the interactive TUI prompts.
@@ -56,4 +59,4 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 await new AppHost(
     agent, profiles, projects, llmOptions,
-    factory.Create, factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);
+    BuildAgent, factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);

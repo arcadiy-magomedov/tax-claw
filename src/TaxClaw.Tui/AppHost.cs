@@ -1,4 +1,4 @@
-using Microsoft.Extensions.AI;
+using Microsoft.Agents.AI;
 using Spectre.Console;
 using TaxClaw.Agent;
 using TaxClaw.Agent.Commands;
@@ -15,7 +15,7 @@ public sealed class AppHost(
     IProfileStore profiles,
     IProjectStore projects,
     LlmOptions llmOptions,
-    Func<IChatClient> buildChatClient,
+    Func<AIAgent> buildAgent,
     IModelCatalog? modelCatalog = null,
     Func<CancellationToken, Task>? persistPreferences = null)
 {
@@ -198,7 +198,7 @@ public sealed class AppHost(
         llmOptions.ReasoningEffort = effort;
         try
         {
-            agent.UseClient(buildChatClient());
+            await agent.UseAgentAsync(buildAgent(), ct);
         }
         catch (Exception ex)
         {
