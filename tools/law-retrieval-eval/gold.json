@@ -1,0 +1,27 @@
+{
+  "_about": "Gold query set for §586/1992 (Czech Income Tax Act) retrieval eval. 'query' = natural user/agent phrasing (EN); 'query_cz' = LLM-authored Czech legal-term expansion/translation (the 'keyword + LLM-expansion' strategy input). 'gold' = acceptable section(s); a hit on ANY listed section counts. Labels drafted from Czech ITA structure and verified against corpus text; USER TO SPOT-CHECK.",
+  "queries": [
+    {"id": "employment-income", "query": "income from employment salary", "query_cz": "příjmy ze závislé činnosti mzda zaměstnání", "gold": ["§ 6"]},
+    {"id": "rsu-vesting", "query": "how is vesting of employer RSU shares taxed", "query_cz": "zdanění zaměstnaneckých akcií nepeněžní příjem ze závislé činnosti", "gold": ["§ 6"]},
+    {"id": "company-car", "query": "private use of company car taxable benefit", "query_cz": "nepeněžní příjem bezplatné použití vozidla zaměstnance", "gold": ["§ 6"]},
+    {"id": "dividends", "query": "taxation of dividends and profit shares", "query_cz": "příjmy z kapitálového majetku dividendy podíly na zisku", "gold": ["§ 8"]},
+    {"id": "interest-income", "query": "tax on interest income from deposits", "query_cz": "úroky z vkladů příjmy z kapitálového majetku", "gold": ["§ 8"]},
+    {"id": "us-dividends", "query": "how are US dividends taxed for a Czech resident", "query_cz": "zdanění dividend ze zdrojů v zahraničí kapitálový majetek", "gold": ["§ 8", "§ 38f"]},
+    {"id": "sale-securities", "query": "income from sale of shares and securities", "query_cz": "příjem z prodeje cenných papírů ostatní příjmy", "gold": ["§ 10"]},
+    {"id": "time-test", "query": "exemption time test for selling securities held long term", "query_cz": "osvobození od daně časový test prodej cenných papírů", "gold": ["§ 4"]},
+    {"id": "foreign-tax-credit", "query": "credit for tax paid abroad avoiding double taxation", "query_cz": "zápočet daně zaplacené v zahraničí zamezení dvojího zdanění", "gold": ["§ 38f"]},
+    {"id": "tax-rate", "query": "personal income tax rate", "query_cz": "sazba daně z příjmů fyzických osob", "gold": ["§ 16"]},
+    {"id": "taxpayer-residence", "query": "who is a Czech tax resident taxpayer", "query_cz": "poplatník daňový rezident České republiky", "gold": ["§ 2"]},
+    {"id": "worldwide-income", "query": "worldwide income of a Czech tax resident", "query_cz": "daňový rezident daňová povinnost příjmy ze zdrojů v zahraničí", "gold": ["§ 2"]},
+    {"id": "tax-base", "query": "how is the tax base determined from several income types", "query_cz": "základ daně dílčí základ daně souběh příjmů", "gold": ["§ 5"]},
+    {"id": "mortgage-interest", "query": "deduction of mortgage loan interest", "query_cz": "nezdanitelná část základu daně úroky z úvěru bydlení", "gold": ["§ 15"]},
+    {"id": "donations", "query": "tax deduction for charitable donations", "query_cz": "bezúplatné plnění dar odpočet od základu daně", "gold": ["§ 15"]},
+    {"id": "taxpayer-credit", "query": "basic tax credit per taxpayer", "query_cz": "sleva na dani na poplatníka", "gold": ["§ 35ba"]},
+    {"id": "child-benefit", "query": "child tax credit for dependent child", "query_cz": "daňové zvýhodnění na vyživované dítě", "gold": ["§ 35c"]},
+    {"id": "return-obligation", "query": "who must file an income tax return", "query_cz": "povinnost podat daňové přiznání", "gold": ["§ 38g"]},
+    {"id": "self-employment", "query": "income from business or self-employment", "query_cz": "příjmy ze samostatné činnosti podnikání", "gold": ["§ 7"]},
+    {"id": "rental-income", "query": "taxation of income from renting property", "query_cz": "příjmy z nájmu pronájem nemovitosti", "gold": ["§ 9"]},
+    {"id": "prepayments", "query": "advance income tax prepayments during the year", "query_cz": "zálohy na daň z příjmů zálohové období", "gold": ["§ 38a"]},
+    {"id": "employer-withholding", "query": "employer withholding advance tax on wages", "query_cz": "záloha na daň z příjmů ze závislé činnosti plátce", "gold": ["§ 38h"]}
+  ]
+}
