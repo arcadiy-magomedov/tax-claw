@@ -20,7 +20,7 @@ before it. Implement them in order.
 | 1 | [Foundation & walking skeleton](2026-06-15-tax-claw-foundation.md) | — | Runnable TUI: create per-year projects, cross-project profile, provider-agnostic chat with decimal-math tools |
 | 2 | [Canonical model & calc runtime](2026-06-15-tax-claw-calc-runtime.md) | 1 | `TaxReturn`, form DAG, approved version-pinned generated functions, `CalculationTrace` |
 | 2.5 | **MAF adoption** (promoted from Deferred, 2026-07-03) | 1 | Replace the thin `IChatClient` agent with a MAF `AIAgent` (`chatClient.AsAIAgent`); adopt the **official** `Microsoft.Agents.AI.GitHub.Copilot` provider so **function tools actually fire on the default Copilot provider** (the hand-rolled adapter did not bridge tools). Unlocks native memory, MCP, middleware for later plans. |
-| 3 | [Law corpus & RAG](2026-06-15-tax-claw-law-rag.md) | 1 | Versioned legislation, hybrid search, `lookup_law`/`search_law` with citations |
+| 3 | [Law grounding & retrieval](2026-06-15-tax-claw-law-rag.md) *(revised 2026-07-03)* | 1, 2, 2.5 | **Grounding contract**: versioned e-Sbírka corpus (structured import, no parser), addressed `lookup_law(§)` + FTS5 keyword (Czech expansion) — vector deferred; approval-time gate on calc `LawRef` + MAF claims middleware so every decision cites in-force law |
 | 4 | [Document pipeline](2026-06-15-tax-claw-document-pipeline.md) | 1, 2 | Drop a doc → classify → OCR/text → schema-bound entities → mapped to the return |
 | 5 | [Memory & feedback](2026-06-15-tax-claw-memory.md) | 1, 2, 4 | Scoped memory, prioritized feedback, version invalidation of learned artifacts |
 | 6 | [Skills, MCP & sharing](2026-06-15-tax-claw-skills-sharing.md) | 1, 2, 5 | Skill/knowledge-pack format, loading, PII-gated export, safe import, MCP tool surface |
@@ -48,14 +48,17 @@ before it. Implement them in order.
   (memory/MCP/middleware) via the same seam, after Plans 2–7 stabilize.~~ **Promoted to Plan 2.5
   (2026-07-03)** — MAF reached GA (2026-04-02), so this is no longer deferred; it runs before Plan 3
   so later plans can use MAF's native memory/MCP/middleware instead of hand-rolled equivalents.
-- **Full corpus/form ingestion wiring** — loading real legislation and the official form/instructions
-  for the active year into the Plan 3 corpus and Plan 2 form DAG (the seams exist; data wiring is a
-  composition step in the TUI).
+- **Full corpus/form ingestion wiring** — the **legislation source is now resolved** (e-Sbírka open
+  data; structured import, see revised Plan 3). Remaining: composing the import for the active
+  project year, and loading the official form/instructions into the Plan 2 form DAG. Treaty (US–CZ)
+  and GFŘ methodics are a Plan 3 follow-up (different collection/structure).
 
 ## Open questions from spec §14 and where they resolve
 
 - Default dev LLM provider → Plan 1 config (`appsettings.json`).
 - EPO XSD source / XML shape → Plan 7, Task 7.
-- Legislation source + update policy → Plan 3 ingestion.
+- Legislation source + update policy → **RESOLVED (2026-07-03): official e-Sbírka open data**
+  (`opendata.eselpoint.gov.cz`, SPARQL/bulk/REST; keyless, public-domain, daily-updated; date-
+  addressed editions). See revised Plan 3 §1.
 - macOS sandbox technology → deferred hardening (above).
 - Skill manifest schema → Plan 6, Task 2.
