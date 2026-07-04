@@ -10,6 +10,7 @@ using TaxClaw.Law;
 using TaxClaw.Law.Ingest;
 using TaxClaw.Law.Model;
 using TaxClaw.Llm;
+using TaxClaw.Memory;
 using Profile = TaxClaw.Core.Model.Profile;
 
 namespace TaxClaw.Tui;
@@ -24,6 +25,8 @@ public sealed class AppHost(
     LawSession lawSession,
     ILawSource lawSource,
     DocumentPipeline documentPipeline,
+    MemoryContextProvider memoryContext,
+    SessionState sessionState,
     IModelCatalog? modelCatalog = null,
     Func<CancellationToken, Task>? persistPreferences = null)
 {
@@ -63,7 +66,8 @@ public sealed class AppHost(
                 case ChatCommand chat when chat.Message.Length > 0:
                     await AnsiConsole.Status().StartAsync("thinking…", async _ =>
                     {
-                        string reply = lawSession.Annotate(await agent.SendAsync(chat.Message, ct));
+                        string turnContext = await memoryContext.BuildContextAsync(sessionState.ActiveProjectId, null, ct);
+                        string reply = lawSession.Annotate(await agent.SendAsync(chat.Message, turnContext, ct));
                         AnsiConsole.MarkupLine($"[white]{Markup.Escape(reply)}[/]");
                     });
                     break;
@@ -340,6 +344,7 @@ public sealed class AppHost(
         {
             var project = await projects.CreateAsync(year, profile, ct);
             _currentReturn = new TaxReturn(year);
+            sessionState.ActiveProjectId = year.Year.ToString();
             AnsiConsole.MarkupLine($"[green]Created project[/] [teal]{project.Id}[/] [grey](status: {project.Status})[/].");
         }
         catch (InvalidOperationException ex)

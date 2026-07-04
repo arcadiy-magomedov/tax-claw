@@ -15,10 +15,13 @@ public sealed class TaxClawAgent : IAsyncDisposable
 
     public TaxClawAgent(AIAgent agent) => _agent = agent;
 
-    public async Task<string> SendAsync(string userMessage, CancellationToken ct = default)
+    public async Task<string> SendAsync(string userMessage, string? turnContext = null, CancellationToken ct = default)
     {
         _session ??= await _agent.CreateSessionAsync(ct);
-        AgentResponse response = await _agent.RunAsync(userMessage, _session, cancellationToken: ct);
+        string message = string.IsNullOrWhiteSpace(turnContext)
+            ? userMessage
+            : $"[Remembered context]\n{turnContext}\n\n[User]\n{userMessage}";
+        AgentResponse response = await _agent.RunAsync(message, _session, cancellationToken: ct);
         return response.Text;
     }
 

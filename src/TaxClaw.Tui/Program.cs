@@ -9,6 +9,7 @@ using TaxClaw.Documents.Extract;
 using TaxClaw.Law;
 using TaxClaw.Law.Ingest;
 using TaxClaw.Llm;
+using TaxClaw.Memory;
 using TaxClaw.Storage;
 using TaxClaw.Tui;
 
@@ -40,7 +41,17 @@ var lawSession = new LawSession();
 using var httpClient = new HttpClient();
 ILawSource lawSource = ESbirkaSource.Http(httpClient);
 
-var tools = MathTools.CreateTools().Concat(lawSession.Tools.CreateTools()).ToList();
+// Durable memory: scoped facts + user corrections injected each turn; remember_feedback lets the
+// agent persist a correction. The active project id (for scoping) is shared via SessionState.
+var memoryStore = new JsonMemoryStore(root);
+var memoryContext = new MemoryContextProvider(memoryStore);
+var sessionState = new SessionState();
+var feedbackTools = new FeedbackTools(memoryStore, () => sessionState.ActiveProjectId);
+
+var tools = MathTools.CreateTools()
+    .Concat(lawSession.Tools.CreateTools())
+    .Concat(feedbackTools.CreateTools())
+    .ToList();
 AIAgent BuildAgent() => factory.CreateAgent(Prompts.System, tools);
 await using var agent = new TaxClawAgent(BuildAgent());
 
@@ -79,5 +90,5 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 await new AppHost(
     agent, profiles, projects, llmOptions,
-    BuildAgent, lawSession, lawSource, documentPipeline,
+    BuildAgent, lawSession, lawSource, documentPipeline, memoryContext, sessionState,
     factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);

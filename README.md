@@ -96,6 +96,15 @@ Text and CSV exports are read directly; scans/PDFs/images need the OCR/Vision re
 deferred adapter (lands with the privacy-aware recognizer). LLM-backed classification/extraction
 implement the same seams for messy real-world formats.
 
+## Memory
+
+The agent has durable, scoped memory under `~/.tax-claw/memory/`. Corrections you give are captured
+via a `remember_feedback` tool and **outrank the agent's defaults** on later turns (e.g. "treat
+Microsoft RSUs as § 6"). Memory is scoped — global, per-project, or per-document-type — and the
+relevant entries are injected into each turn. Learned artifacts (generated calc functions, document
+parsers) are pinned to the law/form version they were derived against and **invalidated when that
+version changes**, so last year's rule never silently applies to a new year.
+
 ## Test
 
 ```bash

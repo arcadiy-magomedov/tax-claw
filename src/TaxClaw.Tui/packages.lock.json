@@ -297,6 +297,14 @@
           "TaxClaw.Core": "[1.0.0, )"
         }
       },
+      "taxclaw.memory": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.AI": "[10.7.0, )",
+          "TaxClaw.Core": "[1.0.0, )",
+          "TaxClaw.Storage": "[1.0.0, )"
+        }
+      },
       "taxclaw.storage": {
         "type": "Project",
         "dependencies": {
