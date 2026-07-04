@@ -92,9 +92,12 @@ you to confirm rather than guessed. Supported types: employment income, RSU vest
 brokerage trade confirmations (a SELL becomes a §10 disposal). Amounts keep their source currency;
 FX conversion is a later calc step.
 
-Text and CSV exports are read directly; scans/PDFs/images need the OCR/Vision recognizer, which is a
-deferred adapter (lands with the privacy-aware recognizer). LLM-backed classification/extraction
-implement the same seams for messy real-world formats.
+Classification and extraction run **deterministic-first**: a cheap keyword classifier and a
+`label: value` extractor handle clean documents with reproducible, traceable results, and the
+LLM is consulted only for ambiguous documents or missing required fields (its values never overwrite
+deterministic ones — they only fill gaps). Text and CSV exports are read directly; scans, image-PDFs,
+and photos fall back to a **Vision-LLM recognizer**. The LLM client is per-provider and PII-redacted,
+and is created lazily so launch never pays for — or fails on — a provider you don't use for documents.
 
 ## Memory
 

@@ -55,12 +55,15 @@ var tools = MathTools.CreateTools()
 AIAgent BuildAgent() => factory.CreateAgent(Prompts.System, tools);
 await using var agent = new TaxClawAgent(BuildAgent());
 
-// Document pipeline: text/CSV exports are read directly; scans/PDFs need the (deferred) OCR/Vision
-// recognizer. Classification + schema-bound extraction keep document content as data, not instructions.
+// Document pipeline: a text layer is preferred; scans/image-PDFs fall back to a Vision-LLM
+// recognizer. Classification and schema-bound extraction run deterministic-first, consulting the
+// LLM only for ambiguous documents / missing required fields. The LLM client is created lazily
+// (per-provider, PII-redacted) so launch never pays for — or fails on — an unused provider.
+var llmDocClient = new LazyChatClient(factory.CreateChatClient);
 var documentPipeline = new DocumentPipeline(
-    new TextLayerDetector(new PlainTextExtractor(), new UnavailableRecognizer()),
-    new KeywordClassifier(),
-    new LabelledLineExtractor());
+    new TextLayerDetector(new PlainTextExtractor(), new VisionRecognizer(llmDocClient)),
+    new FallbackClassifier(new KeywordClassifier(), new LlmDocumentClassifier(llmDocClient)),
+    new FallbackEntityExtractor(new LabelledLineExtractor(), new LlmEntityExtractor(llmDocClient)));
 
 // Non-interactive smoke test: `--ask "<prompt>"` sends one message and prints the reply.
 // Useful for validating an LLM provider (e.g. Copilot) without the interactive TUI prompts.
