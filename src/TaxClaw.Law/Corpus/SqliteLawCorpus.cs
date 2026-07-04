@@ -28,6 +28,10 @@ public sealed class SqliteLawCorpus : ILawCorpus, IDisposable
               PRIMARY KEY (section, version_eli)
             );
             """);
+        Execute(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS sections_fts USING fts5("
+            + "section UNINDEXED, version_eli UNINDEXED, body, "
+            + "tokenize='unicode61 remove_diacritics 2');");
     }
 
     /// <summary>The live connection, shared with the FTS retriever built over the same corpus.</summary>
@@ -52,6 +56,23 @@ public sealed class SqliteLawCorpus : ILawCorpus, IDisposable
             cmd.Parameters.AddWithValue("$source", s.SourceEli);
             cmd.Parameters.AddWithValue("$hash", s.Hash);
             await cmd.ExecuteNonQueryAsync(ct);
+
+            // Keep the FTS index in step (standalone FTS table has no PK → delete then insert).
+            using SqliteCommand ftsDel = _connection.CreateCommand();
+            ftsDel.Transaction = tx;
+            ftsDel.CommandText = "DELETE FROM sections_fts WHERE section = $section AND version_eli = $version;";
+            ftsDel.Parameters.AddWithValue("$section", s.Section);
+            ftsDel.Parameters.AddWithValue("$version", s.Version.Eli);
+            await ftsDel.ExecuteNonQueryAsync(ct);
+
+            using SqliteCommand ftsIns = _connection.CreateCommand();
+            ftsIns.Transaction = tx;
+            ftsIns.CommandText =
+                "INSERT INTO sections_fts (section, version_eli, body) VALUES ($section, $version, $text);";
+            ftsIns.Parameters.AddWithValue("$section", s.Section);
+            ftsIns.Parameters.AddWithValue("$version", s.Version.Eli);
+            ftsIns.Parameters.AddWithValue("$text", s.Text);
+            await ftsIns.ExecuteNonQueryAsync(ct);
         }
         await tx.CommitAsync(ct);
     }
