@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Azure.AI.OpenAI;
 using GitHub.Copilot;
 using GitHub.Copilot.Rpc;
@@ -24,23 +25,19 @@ namespace TaxClaw.Llm;
 /// </remarks>
 public sealed class AgentFactory(LlmOptions options) : IAgentFactory
 {
-    public AIAgent CreateAgent(string instructions, IList<AITool> tools) =>
-        options.Provider.ToLowerInvariant() switch
+    public AIAgent CreateAgent(string instructions, IList<AITool> tools)
+    {
+        string provider = options.Provider.ToLowerInvariant();
+        AIAgent agent = provider switch
         {
-            "ollama" => ApplyPrivacy(
-                    new OllamaApiClient(new Uri(options.Endpoint ?? "http://localhost:11434"), options.Model),
-                    "ollama", options.RedactPii)
+            "ollama" => new OllamaApiClient(new Uri(options.Endpoint ?? "http://localhost:11434"), options.Model)
                 .AsAIAgent(instructions: instructions, tools: tools),
 
-            "openai" => ApplyPrivacy(
-                    new OpenAIClient(RequireApiKey()).GetChatClient(options.Model).AsIChatClient(),
-                    "openai", options.RedactPii)
+            "openai" => new OpenAIClient(RequireApiKey()).GetChatClient(options.Model).AsIChatClient()
                 .AsAIAgent(instructions: instructions, tools: tools),
 
-            "azure" => ApplyPrivacy(
-                    new AzureOpenAIClient(new Uri(RequireEndpoint()), new ApiKeyCredential(RequireApiKey()))
-                        .GetChatClient(options.Model).AsIChatClient(),
-                    "azure", options.RedactPii)
+            "azure" => new AzureOpenAIClient(new Uri(RequireEndpoint()), new ApiKeyCredential(RequireApiKey()))
+                .GetChatClient(options.Model).AsIChatClient()
                 .AsAIAgent(instructions: instructions, tools: tools),
 
             "copilot" => CreateCopilotAgent(instructions, tools),
@@ -48,18 +45,55 @@ public sealed class AgentFactory(LlmOptions options) : IAgentFactory
             _ => throw new NotSupportedException($"Unknown LLM provider '{options.Provider}'.")
         };
 
+        return WithRedaction(agent, provider, options.RedactPii);
+    }
+
     /// <summary>
-    /// Wraps a cloud provider's client with PII redaction; local providers (ollama) are never
-    /// wrapped. NOTE: the GitHub Copilot path goes through the MAF provider (not an
-    /// <see cref="IChatClient"/>), so redaction is not applied there yet — that needs a MAF
-    /// middleware and is a documented follow-up.
+    /// Wraps an agent with a PII-redaction run-middleware for cloud providers (openai/azure/copilot):
+    /// personal data is tokenized before the model call and restored in the response. This lives at
+    /// the agent layer, so it covers <b>every</b> provider — including GitHub Copilot, which is
+    /// reached through the MAF provider rather than an <see cref="IChatClient"/>. Local providers
+    /// (ollama) are never wrapped; regex redaction is best-effort (structured IDs, not free-text names).
     /// </summary>
-    public static IChatClient ApplyPrivacy(IChatClient client, string provider, bool redactPii)
+    public static AIAgent WithRedaction(AIAgent agent, string provider, bool redactPii)
     {
         bool isLocal = string.Equals(provider, "ollama", StringComparison.OrdinalIgnoreCase);
-        return redactPii && !isLocal
-            ? new PiiRedactingChatClient(client, new RegexPiiDetector())
-            : client;
+        if (!redactPii || isLocal)
+        {
+            return agent;
+        }
+
+        var detector = new RegexPiiDetector();
+        return agent.AsBuilder().Use(
+            runFunc: async (messages, session, runOptions, inner, ct) =>
+            {
+                var map = new PseudonymMap();
+                IList<ChatMessage> redacted = MessageRedaction.Redact(messages, detector, map);
+                AgentResponse response = await inner.RunAsync(redacted, session, runOptions, ct);
+                MessageRedaction.Restore(response.Messages, map);
+                return response;
+            },
+            runStreamingFunc: (messages, session, runOptions, inner, ct) =>
+                RedactStream(messages, session, runOptions, inner, detector, ct))
+            .Build(EmptyServiceProvider.Instance);
+    }
+
+    private static async IAsyncEnumerable<AgentResponseUpdate> RedactStream(
+        IEnumerable<ChatMessage> messages, AgentSession? session, AgentRunOptions? runOptions, AIAgent inner,
+        RegexPiiDetector detector, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var map = new PseudonymMap();
+        IList<ChatMessage> redacted = MessageRedaction.Redact(messages, detector, map);
+        await foreach (AgentResponseUpdate update in inner.RunStreamingAsync(redacted, session, runOptions, ct))
+        {
+            yield return new AgentResponseUpdate(update.Role ?? ChatRole.Assistant, map.Restore(update.Text));
+        }
+    }
+
+    private sealed class EmptyServiceProvider : IServiceProvider
+    {
+        public static readonly EmptyServiceProvider Instance = new();
+        public object? GetService(Type serviceType) => null;
     }
 
     /// <summary>Returns a model catalog for providers that can enumerate models, else null.</summary>

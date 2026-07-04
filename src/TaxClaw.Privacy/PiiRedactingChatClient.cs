@@ -14,14 +14,11 @@ public sealed class PiiRedactingChatClient(IChatClient inner, IPiiDetector detec
         IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
     {
         var map = new PseudonymMap();
-        var redacted = messages.Select(m => Redact(m, map)).ToList();
+        IList<ChatMessage> redacted = MessageRedaction.Redact(messages, detector, map);
 
         ChatResponse response = await inner.GetResponseAsync(redacted, options, cancellationToken);
 
-        foreach (ChatMessage message in response.Messages)
-        {
-            RestoreInPlace(message, map);
-        }
+        MessageRedaction.Restore(response.Messages, map);
         return response;
     }
 
@@ -30,7 +27,7 @@ public sealed class PiiRedactingChatClient(IChatClient inner, IPiiDetector detec
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var map = new PseudonymMap();
-        var redacted = messages.Select(m => Redact(m, map)).ToList();
+        IList<ChatMessage> redacted = MessageRedaction.Redact(messages, detector, map);
 
         await foreach (ChatResponseUpdate update in inner.GetStreamingResponseAsync(redacted, options, cancellationToken))
         {
@@ -42,25 +39,4 @@ public sealed class PiiRedactingChatClient(IChatClient inner, IPiiDetector detec
         inner.GetService(serviceType, serviceKey);
 
     public void Dispose() => inner.Dispose();
-
-    private ChatMessage Redact(ChatMessage message, PseudonymMap map)
-    {
-        string redactedText = message.Text;
-        foreach (PiiSpan span in detector.Detect(message.Text))
-        {
-            redactedText = redactedText.Replace(span.Value, map.Tokenize(span.Kind, span.Value));
-        }
-        return new ChatMessage(message.Role, redactedText);
-    }
-
-    private static void RestoreInPlace(ChatMessage message, PseudonymMap map)
-    {
-        for (int i = 0; i < message.Contents.Count; i++)
-        {
-            if (message.Contents[i] is TextContent text)
-            {
-                message.Contents[i] = new TextContent(map.Restore(text.Text));
-            }
-        }
-    }
 }
