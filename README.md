@@ -210,3 +210,8 @@ advisories escalated to build errors), build, and test.
 ## Data location
 
 Projects and profile are stored under `~/.tax-claw/`.
+
+## License
+
+[GNU GPL v3](LICENSE) or later. Provided WITHOUT ANY WARRANTY — tax-claw assists with preparing a
+declaration; you remain responsible for reviewing and filing it.
