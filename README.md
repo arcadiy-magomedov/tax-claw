@@ -76,6 +76,19 @@ Every answer's `§` citations are checked against the loaded edition; citations 
 are flagged for you to verify (they are never silently trusted). See the retrieval measurement in
 [`tools/law-retrieval-eval/`](tools/law-retrieval-eval/).
 
+**Treaties (double taxation).** For foreign income (US RSUs/dividends) the relevant rules also live
+in a double-taxation treaty (e.g. the US–CZ treaty, 32/1994). The importer aggregates treaty text by
+**article** (`Čl. N`) as well as by `§`, because e-Sbírka cites treaty fragments as
+`"Příloha  Čl. N …"`. Note that treaties carry only the sentinel `0000-00-00` edition (no dated
+consolidations), so treaty loading must select that edition rather than the tax-year edition used for
+acts — wiring that edition selection + the `/law` treaty command is the remaining step.
+
+The core computation itself is modeled as a **grounded DAG** of form 25 5405 (see
+`Form255405`): each line (partial bases § 6–§ 10 → base § 5 → tax § 16 → foreign-tax credit § 38f →
+credits § 35ba/§ 35c → final liability) carries the provision that grounds it. The DAG encodes only
+structure; the per-year arithmetic lives in the agent-generated, user-approved, version-pinned calc
+functions, so a new year's rate never applies silently.
+
 ## Documents
 
 Add a tax document to the active project's return:

@@ -29,7 +29,7 @@ public sealed partial class ESbirkaSource : ILawSource
     public async Task<IReadOnlyList<LawVersion>> ListEditionsAsync(string actNumber, CancellationToken ct = default) =>
         ParseEditions(await _runSparql(EditionsQuery(actNumber), ct), actNumber);
 
-    /// <summary>Aggregates SPARQL <c>(cit, text)</c> fragment rows into one <see cref="LawSection"/> per §.</summary>
+    /// <summary>Aggregates SPARQL <c>(cit, text)</c> fragment rows into one <see cref="LawSection"/> per § or article.</summary>
     public static IReadOnlyList<LawSection> Aggregate(string sparqlResultJson, LawVersion version)
     {
         using JsonDocument doc = JsonDocument.Parse(sparqlResultJson);
@@ -40,10 +40,9 @@ public sealed partial class ESbirkaSource : ILawSource
 
         foreach (JsonElement row in rows.EnumerateArray())
         {
-            Match m = SectionKey().Match(Value(row, "cit"));
-            if (!m.Success)
+            if (!TryCitationKey(Value(row, "cit"), out string section))
             {
-                continue; // structural header ("Část 1", ...) — not a §
+                continue; // structural header ("Část 1", ...) — not a § or article
             }
 
             string text = CleanText(Value(row, "text"));
@@ -52,7 +51,6 @@ public sealed partial class ESbirkaSource : ILawSource
                 continue;
             }
 
-            string section = $"§ {m.Groups[1].Value}";
             if (!bySection.TryGetValue(section, out List<string>? parts))
             {
                 parts = [];
@@ -65,6 +63,32 @@ public sealed partial class ESbirkaSource : ILawSource
         return order
             .Select(s => new LawSection(s, s, string.Join(" ", bySection[s]), version, version.Eli))
             .ToList();
+    }
+
+    /// <summary>
+    /// Derives the aggregation key from a fragment citation. Acts are keyed by paragraph
+    /// (<c>§ 16</c>); international treaties, whose fragments are cited as
+    /// <c>"Příloha  Čl. N bod M písm. x)"</c>, are keyed by article (<c>Čl. N</c>). Anything else
+    /// (structural headers) is skipped.
+    /// </summary>
+    private static bool TryCitationKey(string cit, out string cite)
+    {
+        Match paragraph = SectionKey().Match(cit);
+        if (paragraph.Success)
+        {
+            cite = $"§ {paragraph.Groups[1].Value}";
+            return true;
+        }
+
+        Match article = ArticleKey().Match(cit);
+        if (article.Success)
+        {
+            cite = $"Čl. {article.Groups[1].Value}";
+            return true;
+        }
+
+        cite = string.Empty;
+        return false;
     }
 
     /// <summary>Parses edition URIs (…/{act}/{yyyy-MM-dd}) into <see cref="LawVersion"/>s; skips the sentinel 0000-00-00.</summary>
@@ -135,6 +159,9 @@ public sealed partial class ESbirkaSource : ILawSource
 
     [GeneratedRegex(@"^§\s*(\d+[a-z]*)", RegexOptions.CultureInvariant)]
     private static partial Regex SectionKey();
+
+    [GeneratedRegex(@"Čl\.\s*(\d+[a-z]*)", RegexOptions.CultureInvariant)]
+    private static partial Regex ArticleKey();
 
     [GeneratedRegex(@"/(\d{4}-\d{2}-\d{2})$", RegexOptions.CultureInvariant)]
     private static partial Regex EditionDate();

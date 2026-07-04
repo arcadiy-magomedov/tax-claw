@@ -42,6 +42,31 @@ public class ESbirkaSourceTests
     }
 
     [Fact]
+    public void Aggregate_groups_treaty_fragments_by_article()
+    {
+        // Real fragment shape of the US–CZ double-taxation treaty (32/1994) from e-Sbírka:
+        // treaty fragments are cited as "Příloha  Čl. N …" (articles), not "§ N".
+        const string json = """
+        {"results":{"bindings":[
+          {"cit":{"value":"Příloha  Čl. 1"},"text":{"value":"Článek 1"}},
+          {"cit":{"value":"Příloha  Čl. 1 bod 1"},"text":{"value":"<var>1.</var> Tato smlouva se vztahuje na osoby"}},
+          {"cit":{"value":"Příloha  Čl. 1 bod 2 písm. a)"},"text":{"value":"jakoukoli výjimku, osvobození, zápočet"}},
+          {"cit":{"value":"Příloha  Čl. 4 bod 1"},"text":{"value":"výraz rezident jednoho smluvního státu"}}
+        ]}}
+        """;
+
+        var treaty = new LawVersion("32/1994", new DateOnly(1994, 1, 1));
+        var sections = ESbirkaSource.Aggregate(json, treaty);
+
+        Assert.Equal(2, sections.Count); // Čl. 1, Čl. 4
+        LawSection article1 = sections.Single(s => s.Section == "Čl. 1");
+        Assert.Contains("Tato smlouva se vztahuje", article1.Text);
+        Assert.Contains("zápočet", article1.Text); // both bod fragments aggregated
+        Assert.DoesNotContain("<var>", article1.Text);
+        Assert.Contains(sections, s => s.Section == "Čl. 4");
+    }
+
+    [Fact]
     public async Task LoadAsync_uses_the_injected_fetcher()
     {
         var source = new ESbirkaSource((_, _) =>
