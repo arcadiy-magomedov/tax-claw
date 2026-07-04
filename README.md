@@ -105,6 +105,22 @@ relevant entries are injected into each turn. Learned artifacts (generated calc 
 parsers) are pinned to the law/form version they were derived against and **invalidated when that
 version changes**, so last year's rule never silently applies to a new year.
 
+## Skills & sharing
+
+Know-how is packageable as a **skill / knowledge pack** — a manifest (id, version, pinned law/form
+version, author, content hash) plus generalized artifacts (format parsers, calc functions, mapping
+rules), under `~/.tax-claw/skills/`. Packs are shared as plain files via a git repo (PR review),
+not an in-app registry.
+
+- **Export** bundles artifacts only after a PII scan clears them — PII can't leave by construction
+  (documents/amounts are never in shareable artifacts; the scanner is defense-in-depth).
+- **Import** treats a foreign pack as untrusted: it verifies the content hash, refuses on PII, and
+  stages into `skills-pending/` — **nothing activates or runs until you approve it** (reusing the
+  calc approval gate + sandbox), and version pins keep another year's rule from applying silently.
+- **MCP:** internal tools are published behind a Model Context Protocol surface for future sharing;
+  transport hosting and external-server consumption (which the agent framework supports natively)
+  land when needed — v1 has no external MCP servers by design.
+
 ## Test
 
 ```bash

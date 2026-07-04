@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "taxclaw.core": {
+        "type": "Project"
+      },
+      "taxclaw.storage": {
+        "type": "Project",
+        "dependencies": {
+          "TaxClaw.Core": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}

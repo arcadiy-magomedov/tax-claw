@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\TaxClaw.Core\TaxClaw.Core.csproj" />
+    <ProjectReference Include="..\..\src\TaxClaw.Storage\TaxClaw.Storage.csproj" />
+    <ProjectReference Include="..\..\src\TaxClaw.Skills\TaxClaw.Skills.csproj" />
+    <ProjectReference Include="..\..\src\TaxClaw.Mcp\TaxClaw.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\TaxClaw.Agent\TaxClaw.Agent.csproj" />
+  </ItemGroup>
+
+</Project>
