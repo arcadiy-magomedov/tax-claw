@@ -127,6 +127,16 @@ public sealed class AgentFactory(LlmOptions options) : IAgentFactory
             : client;
     }
 
+    /// <summary>
+    /// Wraps an agent so the given MAF context providers enrich every invocation (e.g. injecting
+    /// remembered context). Uses <c>AIAgentBuilder.UseAIContextProviders</c>, which works for any
+    /// provider — including Copilot — not just IChatClient-backed agents.
+    /// </summary>
+    public static AIAgent WithMemory(AIAgent agent, params MessageAIContextProvider[] providers) =>
+        providers.Length == 0
+            ? agent
+            : agent.AsBuilder().UseAIContextProviders(providers).Build(EmptyServiceProvider.Instance);
+
     /// <summary>Returns a model catalog for providers that can enumerate models, else null.</summary>
     public IModelCatalog? CreateCatalog() => options.Provider.ToLowerInvariant() switch
     {

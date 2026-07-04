@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.AI;
 
 namespace TaxClaw.Llm;
@@ -21,7 +20,7 @@ public sealed class LazyChatClient(Func<IChatClient> factory) : IChatClient
 
     public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages, ChatOptions? options = null,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default) =>
+        CancellationToken cancellationToken = default) =>
         Inner.GetStreamingResponseAsync(messages, options, cancellationToken);
 
     // Do not force creation just to probe services.

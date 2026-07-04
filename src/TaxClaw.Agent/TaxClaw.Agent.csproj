@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TaxClaw.Core\TaxClaw.Core.csproj" />
+    <ProjectReference Include="..\TaxClaw.Memory\TaxClaw.Memory.csproj" />
   </ItemGroup>
 
   <ItemGroup>

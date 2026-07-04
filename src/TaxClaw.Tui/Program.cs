@@ -48,11 +48,16 @@ var memoryContext = new MemoryContextProvider(memoryStore);
 var sessionState = new SessionState();
 var feedbackTools = new FeedbackTools(memoryStore, () => sessionState.ActiveProjectId);
 
+// Memory is injected MAF-natively: the agent pulls remembered context itself each turn (covering
+// every provider, incl. Copilot). Wrapping happens outside CreateAgent so redaction stays innermost
+// and also redacts anything the memory layer adds before it reaches the model.
+var memoryProvider = new MemoryMessageContextProvider(memoryContext, () => sessionState.ActiveProjectId);
+
 var tools = MathTools.CreateTools()
     .Concat(lawSession.Tools.CreateTools())
     .Concat(feedbackTools.CreateTools())
     .ToList();
-AIAgent BuildAgent() => factory.CreateAgent(Prompts.System, tools);
+AIAgent BuildAgent() => AgentFactory.WithMemory(factory.CreateAgent(Prompts.System, tools), memoryProvider);
 await using var agent = new TaxClawAgent(BuildAgent());
 
 // Document pipeline: a text layer is preferred; scans/image-PDFs fall back to a Vision-LLM
@@ -93,5 +98,5 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 await new AppHost(
     agent, profiles, projects, llmOptions,
-    BuildAgent, lawSession, lawSource, documentPipeline, memoryContext, sessionState,
+    BuildAgent, lawSession, lawSource, documentPipeline, sessionState,
     factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);

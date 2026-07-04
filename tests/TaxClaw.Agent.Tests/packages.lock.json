@@ -196,11 +196,26 @@
         "dependencies": {
           "Microsoft.Agents.AI": "[1.13.0, )",
           "Microsoft.Extensions.AI": "[10.7.0, )",
-          "TaxClaw.Core": "[1.0.0, )"
+          "TaxClaw.Core": "[1.0.0, )",
+          "TaxClaw.Memory": "[1.0.0, )"
         }
       },
       "taxclaw.core": {
         "type": "Project"
+      },
+      "taxclaw.memory": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.AI": "[10.7.0, )",
+          "TaxClaw.Core": "[1.0.0, )",
+          "TaxClaw.Storage": "[1.0.0, )"
+        }
+      },
+      "taxclaw.storage": {
+        "type": "Project",
+        "dependencies": {
+          "TaxClaw.Core": "[1.0.0, )"
+        }
       },
       "Microsoft.Agents.AI": {
         "type": "CentralTransitive",

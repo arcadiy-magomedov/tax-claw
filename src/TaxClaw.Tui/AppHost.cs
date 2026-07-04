@@ -12,7 +12,6 @@ using TaxClaw.Law;
 using TaxClaw.Law.Ingest;
 using TaxClaw.Law.Model;
 using TaxClaw.Llm;
-using TaxClaw.Memory;
 using Profile = TaxClaw.Core.Model.Profile;
 
 namespace TaxClaw.Tui;
@@ -27,7 +26,6 @@ public sealed class AppHost(
     LawSession lawSession,
     ILawSource lawSource,
     DocumentPipeline documentPipeline,
-    MemoryContextProvider memoryContext,
     SessionState sessionState,
     IModelCatalog? modelCatalog = null,
     Func<CancellationToken, Task>? persistPreferences = null)
@@ -72,8 +70,9 @@ public sealed class AppHost(
                 case ChatCommand chat when chat.Message.Length > 0:
                     await AnsiConsole.Status().StartAsync("thinking…", async _ =>
                     {
-                        string turnContext = await memoryContext.BuildContextAsync(sessionState.ActiveProjectId, null, ct);
-                        string reply = lawSession.Annotate(await agent.SendAsync(chat.Message, turnContext, ct));
+                        // Remembered context is injected MAF-natively by the agent (see BuildAgent),
+                        // so the loop just forwards the user's message.
+                        string reply = lawSession.Annotate(await agent.SendAsync(chat.Message, ct: ct));
                         AnsiConsole.MarkupLine($"[white]{Markup.Escape(reply)}[/]");
                     });
                     break;

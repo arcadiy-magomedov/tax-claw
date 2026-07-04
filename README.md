@@ -104,9 +104,11 @@ and is created lazily so launch never pays for — or fails on — a provider yo
 The agent has durable, scoped memory under `~/.tax-claw/memory/`. Corrections you give are captured
 via a `remember_feedback` tool and **outrank the agent's defaults** on later turns (e.g. "treat
 Microsoft RSUs as § 6"). Memory is scoped — global, per-project, or per-document-type — and the
-relevant entries are injected into each turn. Learned artifacts (generated calc functions, document
-parsers) are pinned to the law/form version they were derived against and **invalidated when that
-version changes**, so last year's rule never silently applies to a new year.
+relevant entries are injected into each turn **MAF-natively**: the agent pulls remembered context
+itself (via `AIAgentBuilder.UseAIContextProviders`), so injection is uniform across every provider —
+including GitHub Copilot — and decoupled from the TUI loop. Learned artifacts (generated calc
+functions, document parsers) are pinned to the law/form version they were derived against and
+**invalidated when that version changes**, so last year's rule never silently applies to a new year.
 
 ## Skills & sharing
 
