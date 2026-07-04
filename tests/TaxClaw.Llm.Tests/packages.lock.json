@@ -289,7 +289,14 @@
           "Microsoft.Extensions.AI": "[10.7.0, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.7.0, )",
           "OllamaSharp": "[5.4.25, )",
-          "TaxClaw.Core": "[1.0.0, )"
+          "TaxClaw.Core": "[1.0.0, )",
+          "TaxClaw.Privacy": "[1.0.0, )"
+        }
+      },
+      "taxclaw.privacy": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.AI": "[10.7.0, )"
         }
       },
       "Azure.AI.OpenAI": {

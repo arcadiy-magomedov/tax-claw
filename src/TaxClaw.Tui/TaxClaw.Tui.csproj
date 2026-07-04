@@ -6,6 +6,7 @@
     <ProjectReference Include="..\TaxClaw.Agent\TaxClaw.Agent.csproj" />
     <ProjectReference Include="..\TaxClaw.Law\TaxClaw.Law.csproj" />
     <ProjectReference Include="..\TaxClaw.Documents\TaxClaw.Documents.csproj" />
+    <ProjectReference Include="..\TaxClaw.Export\TaxClaw.Export.csproj" />
     <ProjectReference Include="..\TaxClaw.Memory\TaxClaw.Memory.csproj" />
     <ProjectReference Include="..\TaxClaw.Storage\TaxClaw.Storage.csproj" />
   </ItemGroup>

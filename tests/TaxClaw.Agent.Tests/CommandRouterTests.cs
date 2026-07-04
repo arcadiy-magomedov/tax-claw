@@ -43,6 +43,21 @@ public class CommandRouterTests
     }
 
     [Fact]
+    public void Parses_export_command_with_format_and_path()
+    {
+        var command = CommandRouter.Parse("/export summary ~/out/summary.md");
+        var export = Assert.IsType<ExportCommand>(command);
+        Assert.Equal("summary", export.Format);
+        Assert.Equal("~/out/summary.md", export.Path);
+    }
+
+    [Fact]
+    public void Export_without_a_path_becomes_an_error()
+    {
+        Assert.IsType<UnknownCommand>(CommandRouter.Parse("/export pdf"));
+    }
+
+    [Fact]
     public void Parses_quit_command()
     {
         Assert.IsType<QuitCommand>(CommandRouter.Parse("/quit"));

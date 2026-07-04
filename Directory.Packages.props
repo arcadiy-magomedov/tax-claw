@@ -15,6 +15,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.9" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.9" />
     <PackageVersion Include="OllamaSharp" Version="5.4.25" />
+    <PackageVersion Include="QuestPDF" Version="2026.6.1" />
     <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageVersion Include="Spectre.Console" Version="0.57.0" />
   </ItemGroup>

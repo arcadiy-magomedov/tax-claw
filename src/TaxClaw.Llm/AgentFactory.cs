@@ -7,6 +7,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using OllamaSharp;
 using OpenAI;
+using TaxClaw.Privacy;
 
 namespace TaxClaw.Llm;
 
@@ -26,27 +27,40 @@ public sealed class AgentFactory(LlmOptions options) : IAgentFactory
     public AIAgent CreateAgent(string instructions, IList<AITool> tools) =>
         options.Provider.ToLowerInvariant() switch
         {
-            "ollama" => new OllamaApiClient(
-                    new Uri(options.Endpoint ?? "http://localhost:11434"),
-                    options.Model)
+            "ollama" => ApplyPrivacy(
+                    new OllamaApiClient(new Uri(options.Endpoint ?? "http://localhost:11434"), options.Model),
+                    "ollama", options.RedactPii)
                 .AsAIAgent(instructions: instructions, tools: tools),
 
-            "openai" => new OpenAIClient(RequireApiKey())
-                .GetChatClient(options.Model)
-                .AsIChatClient()
+            "openai" => ApplyPrivacy(
+                    new OpenAIClient(RequireApiKey()).GetChatClient(options.Model).AsIChatClient(),
+                    "openai", options.RedactPii)
                 .AsAIAgent(instructions: instructions, tools: tools),
 
-            "azure" => new AzureOpenAIClient(
-                    new Uri(RequireEndpoint()),
-                    new ApiKeyCredential(RequireApiKey()))
-                .GetChatClient(options.Model)
-                .AsIChatClient()
+            "azure" => ApplyPrivacy(
+                    new AzureOpenAIClient(new Uri(RequireEndpoint()), new ApiKeyCredential(RequireApiKey()))
+                        .GetChatClient(options.Model).AsIChatClient(),
+                    "azure", options.RedactPii)
                 .AsAIAgent(instructions: instructions, tools: tools),
 
             "copilot" => CreateCopilotAgent(instructions, tools),
 
             _ => throw new NotSupportedException($"Unknown LLM provider '{options.Provider}'.")
         };
+
+    /// <summary>
+    /// Wraps a cloud provider's client with PII redaction; local providers (ollama) are never
+    /// wrapped. NOTE: the GitHub Copilot path goes through the MAF provider (not an
+    /// <see cref="IChatClient"/>), so redaction is not applied there yet — that needs a MAF
+    /// middleware and is a documented follow-up.
+    /// </summary>
+    public static IChatClient ApplyPrivacy(IChatClient client, string provider, bool redactPii)
+    {
+        bool isLocal = string.Equals(provider, "ollama", StringComparison.OrdinalIgnoreCase);
+        return redactPii && !isLocal
+            ? new PiiRedactingChatClient(client, new RegexPiiDetector())
+            : client;
+    }
 
     /// <summary>Returns a model catalog for providers that can enumerate models, else null.</summary>
     public IModelCatalog? CreateCatalog() => options.Provider.ToLowerInvariant() switch

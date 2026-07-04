@@ -6,6 +6,8 @@ using TaxClaw.Core.Model;
 using TaxClaw.Core.Storage;
 using TaxClaw.Documents;
 using TaxClaw.Documents.Model;
+using TaxClaw.Export;
+using TaxClaw.Export.Xml;
 using TaxClaw.Law;
 using TaxClaw.Law.Ingest;
 using TaxClaw.Law.Model;
@@ -35,7 +37,7 @@ public sealed class AppHost(
     public async Task RunAsync(CancellationToken ct = default)
     {
         AnsiConsole.Write(new FigletText("tax-claw").Color(Color.Teal));
-        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/doc <path>[/][grey] to add a document, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
+        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/doc <path>[/][grey] to add a document, [/][teal]/export <fmt> <path>[/][grey] to export, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
 
         while (!ct.IsCancellationRequested)
         {
@@ -57,6 +59,10 @@ public sealed class AppHost(
 
                 case ProcessDocumentCommand pd:
                     await ProcessDocumentAsync(pd.Path, ct);
+                    break;
+
+                case ExportCommand export:
+                    await ExportAsync(export.Format, export.Path, ct);
                     break;
 
                 case ModelCommand model:
@@ -269,6 +275,42 @@ public sealed class AppHost(
         string effortNote = effort is { Length: > 0 } ? $", effort: {Markup.Escape(effort)}" : string.Empty;
         AnsiConsole.MarkupLine(
             $"[green]Switched model to[/] [teal]{Markup.Escape(llmOptions.Model)}[/][grey]{effortNote} (conversation context preserved).[/]");
+    }
+
+    private async Task ExportAsync(string format, string path, CancellationToken ct)
+    {
+        if (_currentReturn is not { } ret)
+        {
+            AnsiConsole.MarkupLine("[yellow]No active project. Start one first with [/][teal]/new <year>[/][yellow].[/]");
+            return;
+        }
+
+        string expanded = ExpandPath(path);
+        try
+        {
+            switch (format)
+            {
+                case "summary":
+                    await File.WriteAllTextAsync(expanded, new SummaryExporter().Export(ret), ct);
+                    break;
+                case "xml":
+                    await File.WriteAllTextAsync(expanded, new XmlExporter().Export(ret), ct);
+                    break;
+                case "pdf":
+                    await File.WriteAllBytesAsync(expanded, new PdfExporter().Export(ret), ct);
+                    break;
+                default:
+                    AnsiConsole.MarkupLine($"[yellow]Unknown format '{Markup.Escape(format)}'. Use summary, pdf, or xml.[/]");
+                    return;
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Export failed: {Markup.Escape(ex.Message)}[/]");
+            return;
+        }
+
+        AnsiConsole.MarkupLine($"[green]Exported[/] [teal]{Markup.Escape(format)}[/] [grey]→ {Markup.Escape(expanded)}[/].");
     }
 
     private async Task ProcessDocumentAsync(string path, CancellationToken ct)

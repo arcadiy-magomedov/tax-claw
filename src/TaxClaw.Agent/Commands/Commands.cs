@@ -13,6 +13,9 @@ public sealed record LoadLawCommand(TaxYear Year) : TuiCommand;
 /// <summary>Process a document file through the pipeline into the active project's return.</summary>
 public sealed record ProcessDocumentCommand(string Path) : TuiCommand;
 
+/// <summary>Export the active project's return in a format (summary/pdf/xml) to a path.</summary>
+public sealed record ExportCommand(string Format, string Path) : TuiCommand;
+
 /// <summary>Show the current model / list models (ModelId null) or switch to a model.</summary>
 public sealed record ModelCommand(string? ModelId) : TuiCommand;
 

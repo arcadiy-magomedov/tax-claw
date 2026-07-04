@@ -25,6 +25,7 @@ public static class CommandRouter
             "/doc" => parts.Length > 1 && parts[1].Trim().Length > 0
                 ? new ProcessDocumentCommand(parts[1].Trim())
                 : new UnknownCommand("Usage: /doc <path>, e.g. /doc ~/statements/dividend.txt"),
+            "/export" => ParseExport(parts),
             "/model" or "/models" => new ModelCommand(parts.Length > 1 ? parts[1].Trim() : null),
             _ => new UnknownCommand($"Unknown command '{verb}'.")
         };
@@ -62,5 +63,17 @@ public static class CommandRouter
         {
             return new UnknownCommand(ex.Message);
         }
+    }
+
+    private static TuiCommand ParseExport(string[] parts)
+    {
+        string[] args = parts.Length > 1
+            ? parts[1].Split(' ', 2, StringSplitOptions.RemoveEmptyEntries)
+            : [];
+        if (args.Length < 2)
+        {
+            return new UnknownCommand("Usage: /export <summary|pdf|xml> <path>");
+        }
+        return new ExportCommand(args[0].ToLowerInvariant(), args[1].Trim());
     }
 }

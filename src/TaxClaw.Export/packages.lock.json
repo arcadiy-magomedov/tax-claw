@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "QuestPDF": {
+        "type": "Direct",
+        "requested": "[2026.6.1, )",
+        "resolved": "2026.6.1",
+        "contentHash": "EuGtkJcYNF/IV5Sd4WzshYJcqG5FNutBrRFPqzzlFxIEV9FOrN1pbPIYf38LVKEz9WCpHZN5SZjcISUefoHQvQ=="
+      },
+      "taxclaw.core": {
+        "type": "Project"
+      }
+    }
+  }
+}

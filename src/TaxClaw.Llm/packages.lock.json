@@ -264,6 +264,12 @@
       },
       "taxclaw.core": {
         "type": "Project"
+      },
+      "taxclaw.privacy": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.AI": "[10.7.0, )"
+        }
       }
     }
   }

@@ -121,6 +121,25 @@ not an in-app registry.
   transport hosting and external-server consumption (which the agent framework supports natively)
   land when needed — v1 has no external MCP servers by design.
 
+## Privacy & exporters
+
+**Privacy:** on the cloud path, a PII-redacting middleware pseudonymizes structured personal data
+(rodné číslo, IBAN) before it leaves and restores it in the reply; local providers (Ollama) are
+never wrapped. Toggle with `TAXCLAW_Llm__RedactPii` (default on). Regex redaction is best-effort
+(structured IDs, not free-text names) — the strong guarantee is local mode. *Note:* the default
+GitHub Copilot path goes through the agent-framework provider, so redaction there is a follow-up
+(needs a framework middleware).
+
+**Exporters** project the canonical return; each is a milestone behind one seam:
+
+```
+/export summary ~/out/2027.md     # markdown with per-line traces + § citations
+/export pdf     ~/out/2027.pdf     # form 25 5405 (QuestPDF)
+/export xml     ~/out/2027.xml     # portal XML, validated against an XSD
+```
+
+The XML validates against a schema; the exact EPO/MOJE daně XSD is wired once obtained (spec §14).
+
 ## Test
 
 ```bash

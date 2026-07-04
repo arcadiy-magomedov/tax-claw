@@ -5,10 +5,12 @@
     <Project Path="src/TaxClaw.Calc/TaxClaw.Calc.csproj" />
     <Project Path="src/TaxClaw.Core/TaxClaw.Core.csproj" />
     <Project Path="src/TaxClaw.Documents/TaxClaw.Documents.csproj" />
+    <Project Path="src/TaxClaw.Export/TaxClaw.Export.csproj" />
     <Project Path="src/TaxClaw.Law/TaxClaw.Law.csproj" />
     <Project Path="src/TaxClaw.Llm/TaxClaw.Llm.csproj" />
     <Project Path="src/TaxClaw.Mcp/TaxClaw.Mcp.csproj" />
     <Project Path="src/TaxClaw.Memory/TaxClaw.Memory.csproj" />
+    <Project Path="src/TaxClaw.Privacy/TaxClaw.Privacy.csproj" />
     <Project Path="src/TaxClaw.Skills/TaxClaw.Skills.csproj" />
     <Project Path="src/TaxClaw.Storage/TaxClaw.Storage.csproj" />
     <Project Path="src/TaxClaw.Tui/TaxClaw.Tui.csproj" />
@@ -18,9 +20,11 @@
     <Project Path="tests/TaxClaw.Calc.Tests/TaxClaw.Calc.Tests.csproj" />
     <Project Path="tests/TaxClaw.Core.Tests/TaxClaw.Core.Tests.csproj" />
     <Project Path="tests/TaxClaw.Documents.Tests/TaxClaw.Documents.Tests.csproj" />
+    <Project Path="tests/TaxClaw.Export.Tests/TaxClaw.Export.Tests.csproj" />
     <Project Path="tests/TaxClaw.Law.Tests/TaxClaw.Law.Tests.csproj" />
     <Project Path="tests/TaxClaw.Llm.Tests/TaxClaw.Llm.Tests.csproj" />
     <Project Path="tests/TaxClaw.Memory.Tests/TaxClaw.Memory.Tests.csproj" />
+    <Project Path="tests/TaxClaw.Privacy.Tests/TaxClaw.Privacy.Tests.csproj" />
     <Project Path="tests/TaxClaw.Skills.Tests/TaxClaw.Skills.Tests.csproj" />
     <Project Path="tests/TaxClaw.Storage.Tests/TaxClaw.Storage.Tests.csproj" />
   </Folder>

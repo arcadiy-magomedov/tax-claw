@@ -19,4 +19,7 @@ public sealed class LlmOptions
 
     /// <summary>Required for "openai"/"azure"; optional GitHub token override for "copilot".</summary>
     public string? ApiKey { get; set; }
+
+    /// <summary>When true, wrap cloud providers with PII redaction. Ignored for local providers (ollama).</summary>
+    public bool RedactPii { get; set; } = true;
 }

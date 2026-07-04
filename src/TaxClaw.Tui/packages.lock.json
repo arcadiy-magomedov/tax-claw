@@ -275,6 +275,13 @@
           "TaxClaw.Core": "[1.0.0, )"
         }
       },
+      "taxclaw.export": {
+        "type": "Project",
+        "dependencies": {
+          "QuestPDF": "[2026.6.1, )",
+          "TaxClaw.Core": "[1.0.0, )"
+        }
+      },
       "taxclaw.law": {
         "type": "Project",
         "dependencies": {
@@ -294,7 +301,8 @@
           "Microsoft.Extensions.AI": "[10.7.0, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.7.0, )",
           "OllamaSharp": "[5.4.25, )",
-          "TaxClaw.Core": "[1.0.0, )"
+          "TaxClaw.Core": "[1.0.0, )",
+          "TaxClaw.Privacy": "[1.0.0, )"
         }
       },
       "taxclaw.memory": {
@@ -303,6 +311,12 @@
           "Microsoft.Extensions.AI": "[10.7.0, )",
           "TaxClaw.Core": "[1.0.0, )",
           "TaxClaw.Storage": "[1.0.0, )"
+        }
+      },
+      "taxclaw.privacy": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.AI": "[10.7.0, )"
         }
       },
       "taxclaw.storage": {
@@ -404,6 +418,12 @@
         "dependencies": {
           "Microsoft.Extensions.AI.Abstractions": "10.4.1"
         }
+      },
+      "QuestPDF": {
+        "type": "CentralTransitive",
+        "requested": "[2026.6.1, )",
+        "resolved": "2026.6.1",
+        "contentHash": "EuGtkJcYNF/IV5Sd4WzshYJcqG5FNutBrRFPqzzlFxIEV9FOrN1pbPIYf38LVKEz9WCpHZN5SZjcISUefoHQvQ=="
       },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "CentralTransitive",
