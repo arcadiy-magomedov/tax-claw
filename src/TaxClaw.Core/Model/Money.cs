@@ -21,6 +21,9 @@ public readonly record struct Money(decimal Amount, string Currency)
         return this with { Amount = DecimalMath.Subtract(Amount, other.Amount) };
     }
 
+    public Money Multiply(decimal factor) =>
+        this with { Amount = DecimalMath.Multiply(Amount, factor) };
+
     private void EnsureSameCurrency(Money other)
     {
         if (!string.Equals(Currency, other.Currency, StringComparison.Ordinal))
