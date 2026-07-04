@@ -11,5 +11,5 @@ public readonly record struct Classification(DocumentType Type, double Confidenc
 /// </summary>
 public interface IDocumentClassifier
 {
-    Classification Classify(ExtractedText text);
+    Task<Classification> ClassifyAsync(ExtractedText text, CancellationToken ct = default);
 }

@@ -31,7 +31,7 @@ public sealed class DocumentPipeline(
         SourceDocument doc, TaxReturn current, string documentId, CancellationToken ct = default)
     {
         ExtractedText text = await extractor.ExtractAsync(doc, ct);
-        Classification classification = classifier.Classify(text);
+        Classification classification = await classifier.ClassifyAsync(text, ct);
 
         EntitySchema schema = DocumentSchemas.For(classification.Type);
         ExtractionResult extraction = await entityExtractor.ExtractAsync(text, schema, ct);

@@ -13,7 +13,7 @@ public sealed class KeywordClassifier : IDocumentClassifier
         (DocumentType.BrokerageTradeConfirmation, ["trade confirmation", "sell", "buy", "settlement"])
     ];
 
-    public Classification Classify(ExtractedText text)
+    public Task<Classification> ClassifyAsync(ExtractedText text, CancellationToken ct = default)
     {
         string haystack = text.Text.ToLowerInvariant();
 
@@ -31,6 +31,6 @@ public sealed class KeywordClassifier : IDocumentClassifier
         }
 
         double confidence = bestHits == 0 ? 0.0 : System.Math.Min(1.0, 0.5 + 0.25 * bestHits);
-        return new Classification(best, confidence);
+        return Task.FromResult(new Classification(best, confidence));
     }
 }
