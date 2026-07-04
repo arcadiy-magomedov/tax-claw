@@ -114,12 +114,28 @@ Add a tax document to the active project's return:
 /doc ~/statements/dividend.txt
 ```
 
-The pipeline classifies the document, extracts entities **against a per-type schema** (only declared
-fields are kept, so document text can't act as instructions), validates required fields, and maps
-valid results to canonical income items with document provenance. Missing fields are surfaced for
-you to confirm rather than guessed. Supported types: employment income, RSU vesting, dividends, and
-brokerage trade confirmations (a SELL becomes a §10 disposal). Amounts keep their source currency;
-FX conversion is a later calc step.
+`/doc` also accepts a **folder** (scanned recursively) or a **.zip/.tar/.tar.gz/.tgz archive** (read
+in memory, never extracted to disk) — hand it a whole "Statements 2027" folder or a zip someone sent
+you and every recognized document inside gets processed. Hidden entries (dotfiles, `.git`, ...) and
+files with an unrecognized extension are skipped quietly. You can also pass **multiple paths in one
+command** — including by dragging files from Finder/Explorer into the terminal, or pasting a copied
+path, both of which just insert text — quoted (`'My File.pdf'`) and backslash-escaped (`My\ File.pdf`)
+paths are parsed correctly:
+
+```
+/doc ~/statements/2027/            # a whole folder, recursively
+/doc ~/statements/2027.zip         # a zip of statements
+/doc a.pdf b.pdf 'My Statement.pdf'  # several paths at once
+```
+
+Each resolved document is classified, has entities extracted **against a per-type schema** (only
+declared fields are kept, so document text can't act as instructions), is validated, and — when
+valid — mapped into canonical income items with document provenance; documents compose, so a batch
+builds up the return incrementally. Missing fields are surfaced for you to confirm rather than
+guessed, and one bad file never aborts the rest of a batch — you get a per-document result plus a
+final summary. Supported types: employment income, RSU vesting, dividends, and brokerage trade
+confirmations (a SELL becomes a §10 disposal). Amounts keep their source currency; FX conversion is a
+later calc step.
 
 Classification and extraction run **deterministic-first**: a cheap keyword classifier and a
 `label: value` extractor handle clean documents with reproducible, traceable results, and the

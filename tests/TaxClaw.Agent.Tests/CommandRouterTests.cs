@@ -33,13 +33,39 @@ public class CommandRouterTests
     {
         var command = CommandRouter.Parse("/doc ~/statements/dividend.txt");
         var doc = Assert.IsType<ProcessDocumentCommand>(command);
-        Assert.Equal("~/statements/dividend.txt", doc.Path);
+        Assert.Equal(["~/statements/dividend.txt"], doc.Paths);
     }
 
     [Fact]
     public void Doc_without_a_path_becomes_an_error()
     {
         Assert.IsType<UnknownCommand>(CommandRouter.Parse("/doc"));
+    }
+
+    [Fact]
+    public void Parses_doc_command_with_multiple_space_separated_paths()
+    {
+        var command = CommandRouter.Parse("/doc ~/a.pdf ~/b.csv");
+        var doc = Assert.IsType<ProcessDocumentCommand>(command);
+        Assert.Equal(["~/a.pdf", "~/b.csv"], doc.Paths);
+    }
+
+    [Fact]
+    public void Parses_doc_command_with_a_quoted_path_containing_spaces()
+    {
+        // Simulates dragging a file with spaces in its name from Finder/Explorer.
+        var command = CommandRouter.Parse("/doc '~/My Statements/dividend.txt'");
+        var doc = Assert.IsType<ProcessDocumentCommand>(command);
+        Assert.Equal(["~/My Statements/dividend.txt"], doc.Paths);
+    }
+
+    [Fact]
+    public void Parses_doc_command_with_a_backslash_escaped_space()
+    {
+        // Simulates macOS Terminal's drag-and-drop escaping convention.
+        var command = CommandRouter.Parse(@"/doc ~/My\ Statements/dividend.txt");
+        var doc = Assert.IsType<ProcessDocumentCommand>(command);
+        Assert.Equal(["~/My Statements/dividend.txt"], doc.Paths);
     }
 
     [Fact]

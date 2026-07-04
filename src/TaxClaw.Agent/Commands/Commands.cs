@@ -10,8 +10,12 @@ public sealed record NewProjectCommand(TaxYear Year) : TuiCommand;
 /// <summary>Load the in-force legislation for a tax year into the active law session.</summary>
 public sealed record LoadLawCommand(TaxYear Year) : TuiCommand;
 
-/// <summary>Process a document file through the pipeline into the active project's return.</summary>
-public sealed record ProcessDocumentCommand(string Path) : TuiCommand;
+/// <summary>
+/// Process one or more paths through the pipeline into the active project's return. Each path may
+/// be a single file, a directory (scanned recursively), or an archive (.zip/.tar/.tar.gz/.tgz) —
+/// see <see cref="TaxClaw.Documents.Batch.DocumentBatchResolver"/>.
+/// </summary>
+public sealed record ProcessDocumentCommand(IReadOnlyList<string> Paths) : TuiCommand;
 
 /// <summary>Export the active project's return in a format (summary/pdf/xml) to a path.</summary>
 public sealed record ExportCommand(string Format, string Path) : TuiCommand;

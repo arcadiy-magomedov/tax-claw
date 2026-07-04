@@ -5,6 +5,7 @@ using TaxClaw.Agent.Commands;
 using TaxClaw.Core.Model;
 using TaxClaw.Core.Storage;
 using TaxClaw.Documents;
+using TaxClaw.Documents.Batch;
 using TaxClaw.Documents.Model;
 using TaxClaw.Export;
 using TaxClaw.Export.Xml;
@@ -36,7 +37,7 @@ public sealed class AppHost(
     public async Task RunAsync(CancellationToken ct = default)
     {
         AnsiConsole.Write(new FigletText("tax-claw").Color(Color.Teal));
-        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/doc <path>[/][grey] to add a document, [/][teal]/export <fmt> <path>[/][grey] to export, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
+        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/doc <path>[/][grey] to add a document (file, folder, or .zip/.tar.gz — drag-and-drop or paste paths too), [/][teal]/export <fmt> <path>[/][grey] to export, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
 
         while (!ct.IsCancellationRequested)
         {
@@ -57,7 +58,7 @@ public sealed class AppHost(
                     break;
 
                 case ProcessDocumentCommand pd:
-                    await ProcessDocumentAsync(pd.Path, ct);
+                    await ProcessDocumentAsync(pd.Paths, ct);
                     break;
 
                 case ExportCommand export:
@@ -331,62 +332,117 @@ public sealed class AppHost(
         }
     }
 
-    private async Task ProcessDocumentAsync(string path, CancellationToken ct)
+    private async Task ProcessDocumentAsync(IReadOnlyList<string> rawPaths, CancellationToken ct)
     {
-        if (_currentReturn is not { } current)
+        if (_currentReturn is not { })
         {
             AnsiConsole.MarkupLine("[yellow]No active project. Start one first with [/][teal]/new <year>[/][yellow].[/]");
             return;
         }
 
-        string expanded = ExpandPath(path);
-        if (!File.Exists(expanded))
+        var resolved = new List<ResolvedDocument>();
+        foreach (string rawPath in rawPaths)
         {
-            AnsiConsole.MarkupLine($"[yellow]File not found: {Markup.Escape(expanded)}[/]");
+            string expanded = ExpandPath(rawPath);
+            try
+            {
+                if (Directory.Exists(expanded))
+                {
+                    await foreach (ResolvedDocument doc in DocumentBatchResolver.ResolveDirectoryAsync(expanded, ct))
+                    {
+                        resolved.Add(doc);
+                    }
+                }
+                else if (File.Exists(expanded) && DocumentBatchResolver.IsArchive(expanded))
+                {
+                    await foreach (ResolvedDocument doc in DocumentBatchResolver.ResolveArchiveAsync(expanded, ct))
+                    {
+                        resolved.Add(doc);
+                    }
+                }
+                else if (File.Exists(expanded))
+                {
+                    await foreach (ResolvedDocument doc in DocumentBatchResolver.ResolveFileAsync(expanded, ct))
+                    {
+                        resolved.Add(doc);
+                    }
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]Not found: {Markup.Escape(expanded)}[/]");
+                }
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Could not read {Markup.Escape(expanded)}: {Markup.Escape(ex.Message)}[/]");
+            }
+        }
+
+        if (resolved.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No recognized documents found.[/]");
             return;
         }
 
-        DocumentResult result;
-        try
+        bool multiple = resolved.Count > 1;
+        int added = 0, needsReview = 0, failed = 0;
+
+        foreach (ResolvedDocument rd in resolved)
         {
-            byte[] bytes = await File.ReadAllBytesAsync(expanded, ct);
-            string name = Path.GetFileName(expanded);
-            var doc = SourceDocument.FromBytes(name, bytes);
-            result = await AnsiConsole.Status().StartAsync("processing document…",
-                async _ => await documentPipeline.ProcessAsync(doc, current, name, ct));
-        }
-        catch (NotSupportedException ex)
-        {
-            AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(ex.Message)}[/]");
-            return;
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[yellow]Could not process document: {Markup.Escape(ex.Message)}[/]");
-            return;
+            TaxReturn before = _currentReturn!; // refreshed each iteration so documents compose
+
+            DocumentResult result;
+            try
+            {
+                var doc = SourceDocument.FromBytes(Path.GetFileName(rd.Name), rd.Bytes);
+                result = await AnsiConsole.Status().StartAsync($"processing {rd.Name}…",
+                    async _ => await documentPipeline.ProcessAsync(doc, before, rd.Name, ct));
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                string reason = ex is NotSupportedException ? ex.Message : $"could not process — {ex.Message}";
+                AnsiConsole.MarkupLine(multiple
+                    ? $"[yellow]{Markup.Escape(rd.Name)}: {Markup.Escape(reason)}[/]"
+                    : $"[yellow]{Markup.Escape(reason)}[/]");
+                continue;
+            }
+
+            string prefix = multiple ? $"[teal]{Markup.Escape(rd.Name)}[/]: " : "";
+            AnsiConsole.MarkupLine(
+                $"{prefix}[grey]Classified as[/] [teal]{result.Type}[/] [grey](confidence {result.Confidence:0.0}).[/]");
+
+            if (result.Validation.IsValid)
+            {
+                _currentReturn = result.Return;
+                added++;
+                AnsiConsole.MarkupLine($"[green]Added to the return.[/] [grey]Income items: {_currentReturn.Incomes.Count}.[/]");
+            }
+            else
+            {
+                needsReview++;
+                AnsiConsole.MarkupLine(
+                    $"[yellow]Missing required fields: {Markup.Escape(string.Join(", ", result.Validation.MissingFields))}. "
+                    + "Not added — please confirm or fill these.[/]");
+            }
         }
 
-        AnsiConsole.MarkupLine(
-            $"[grey]Classified as[/] [teal]{result.Type}[/] [grey](confidence {result.Confidence:0.0}).[/]");
-
-        if (result.Validation.IsValid)
-        {
-            _currentReturn = result.Return;
-            AnsiConsole.MarkupLine($"[green]Added to the return.[/] [grey]Income items: {_currentReturn.Incomes.Count}.[/]");
-        }
-        else
+        if (multiple)
         {
             AnsiConsole.MarkupLine(
-                $"[yellow]Missing required fields: {Markup.Escape(string.Join(", ", result.Validation.MissingFields))}. "
-                + "Not added — please confirm or fill these.[/]");
+                $"[grey]Processed {resolved.Count} document(s):[/] [green]{added} added[/][grey],[/] "
+                + $"[yellow]{needsReview} need review[/][grey],[/] [yellow]{failed} failed[/][grey].[/]");
         }
     }
 
-    private static string ExpandPath(string path) =>
-        path.StartsWith('~')
+    private static string ExpandPath(string path)
+    {
+        string expanded = path.StartsWith('~')
             ? Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), path[1..].TrimStart('/', '\\'))
             : path;
+        return Path.GetFullPath(expanded);
+    }
 
     private async Task CreateProjectAsync(TaxYear year, CancellationToken ct)
     {

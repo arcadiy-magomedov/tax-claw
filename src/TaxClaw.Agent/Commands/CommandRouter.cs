@@ -22,9 +22,7 @@ public static class CommandRouter
             "/quit" or "/exit" => new QuitCommand(),
             "/new" => ParseNew(parts),
             "/law" => ParseLaw(parts),
-            "/doc" => parts.Length > 1 && parts[1].Trim().Length > 0
-                ? new ProcessDocumentCommand(parts[1].Trim())
-                : new UnknownCommand("Usage: /doc <path>, e.g. /doc ~/statements/dividend.txt"),
+            "/doc" => ParseDoc(parts),
             "/export" => ParseExport(parts),
             "/model" or "/models" => new ModelCommand(parts.Length > 1 ? parts[1].Trim() : null),
             _ => new UnknownCommand($"Unknown command '{verb}'.")
@@ -75,5 +73,20 @@ public static class CommandRouter
             return new UnknownCommand("Usage: /export <summary|pdf|xml> <path>");
         }
         return new ExportCommand(args[0].ToLowerInvariant(), args[1].Trim());
+    }
+
+    private static TuiCommand ParseDoc(string[] parts)
+    {
+        const string usage =
+            "Usage: /doc <path> [path2 ...] — a file, folder, or .zip/.tar/.tar.gz archive, "
+            + "e.g. /doc ~/statements/dividend.txt (drag-and-drop or paste multiple paths at once)";
+
+        if (parts.Length < 2 || parts[1].Trim().Length == 0)
+        {
+            return new UnknownCommand(usage);
+        }
+
+        IReadOnlyList<string> paths = PathArgumentParser.Tokenize(parts[1]);
+        return paths.Count > 0 ? new ProcessDocumentCommand(paths) : new UnknownCommand(usage);
     }
 }

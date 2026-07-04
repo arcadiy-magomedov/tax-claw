@@ -9,6 +9,13 @@ public sealed record SourceDocument(string FileName, byte[] Bytes, MediaKind Kin
     public static SourceDocument FromBytes(string fileName, byte[] bytes) =>
         new(fileName, bytes, InferKind(fileName));
 
+    /// <summary>
+    /// Whether a filename's extension is one <see cref="InferKind"/> recognizes. Used to filter
+    /// folder/archive scans so unrelated files (.DS_Store, READMEs, nested archives, ...) are
+    /// skipped quietly rather than fed to the pipeline as noise.
+    /// </summary>
+    public static bool HasKnownExtension(string fileName) => InferKind(fileName) != MediaKind.Unknown;
+
     private static MediaKind InferKind(string fileName) =>
         Path.GetExtension(fileName).ToLowerInvariant() switch
         {
