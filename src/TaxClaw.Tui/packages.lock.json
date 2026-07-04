@@ -268,6 +268,13 @@
       "taxclaw.core": {
         "type": "Project"
       },
+      "taxclaw.documents": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.AI": "[10.7.0, )",
+          "TaxClaw.Core": "[1.0.0, )"
+        }
+      },
       "taxclaw.law": {
         "type": "Project",
         "dependencies": {

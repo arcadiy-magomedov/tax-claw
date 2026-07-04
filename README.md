@@ -76,6 +76,26 @@ Every answer's `§` citations are checked against the loaded edition; citations 
 are flagged for you to verify (they are never silently trusted). See the retrieval measurement in
 [`tools/law-retrieval-eval/`](tools/law-retrieval-eval/).
 
+## Documents
+
+Add a tax document to the active project's return:
+
+```
+/new 2027
+/doc ~/statements/dividend.txt
+```
+
+The pipeline classifies the document, extracts entities **against a per-type schema** (only declared
+fields are kept, so document text can't act as instructions), validates required fields, and maps
+valid results to canonical income items with document provenance. Missing fields are surfaced for
+you to confirm rather than guessed. Supported types: employment income, RSU vesting, dividends, and
+brokerage trade confirmations (a SELL becomes a §10 disposal). Amounts keep their source currency;
+FX conversion is a later calc step.
+
+Text and CSV exports are read directly; scans/PDFs/images need the OCR/Vision recognizer, which is a
+deferred adapter (lands with the privacy-aware recognizer). LLM-backed classification/extraction
+implement the same seams for messy real-world formats.
+
 ## Test
 
 ```bash

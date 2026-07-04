@@ -2,6 +2,10 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.Configuration;
 using TaxClaw.Agent;
 using TaxClaw.Core.Model;
+using TaxClaw.Documents;
+using TaxClaw.Documents.Classify;
+using TaxClaw.Documents.Entities;
+using TaxClaw.Documents.Extract;
 using TaxClaw.Law;
 using TaxClaw.Law.Ingest;
 using TaxClaw.Llm;
@@ -40,6 +44,13 @@ var tools = MathTools.CreateTools().Concat(lawSession.Tools.CreateTools()).ToLis
 AIAgent BuildAgent() => factory.CreateAgent(Prompts.System, tools);
 await using var agent = new TaxClawAgent(BuildAgent());
 
+// Document pipeline: text/CSV exports are read directly; scans/PDFs need the (deferred) OCR/Vision
+// recognizer. Classification + schema-bound extraction keep document content as data, not instructions.
+var documentPipeline = new DocumentPipeline(
+    new TextLayerDetector(new PlainTextExtractor(), new UnavailableRecognizer()),
+    new KeywordClassifier(),
+    new LabelledLineExtractor());
+
 // Non-interactive smoke test: `--ask "<prompt>"` sends one message and prints the reply.
 // Useful for validating an LLM provider (e.g. Copilot) without the interactive TUI prompts.
 int askIndex = Array.IndexOf(args, "--ask");
@@ -68,4 +79,5 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 await new AppHost(
     agent, profiles, projects, llmOptions,
-    BuildAgent, lawSession, lawSource, factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);
+    BuildAgent, lawSession, lawSource, documentPipeline,
+    factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);

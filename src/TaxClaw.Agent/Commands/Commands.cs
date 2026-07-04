@@ -10,6 +10,9 @@ public sealed record NewProjectCommand(TaxYear Year) : TuiCommand;
 /// <summary>Load the in-force legislation for a tax year into the active law session.</summary>
 public sealed record LoadLawCommand(TaxYear Year) : TuiCommand;
 
+/// <summary>Process a document file through the pipeline into the active project's return.</summary>
+public sealed record ProcessDocumentCommand(string Path) : TuiCommand;
+
 /// <summary>Show the current model / list models (ModelId null) or switch to a model.</summary>
 public sealed record ModelCommand(string? ModelId) : TuiCommand;
 

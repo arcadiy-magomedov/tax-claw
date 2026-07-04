@@ -4,6 +4,8 @@ using TaxClaw.Agent;
 using TaxClaw.Agent.Commands;
 using TaxClaw.Core.Model;
 using TaxClaw.Core.Storage;
+using TaxClaw.Documents;
+using TaxClaw.Documents.Model;
 using TaxClaw.Law;
 using TaxClaw.Law.Ingest;
 using TaxClaw.Law.Model;
@@ -21,13 +23,16 @@ public sealed class AppHost(
     Func<AIAgent> buildAgent,
     LawSession lawSession,
     ILawSource lawSource,
+    DocumentPipeline documentPipeline,
     IModelCatalog? modelCatalog = null,
     Func<CancellationToken, Task>? persistPreferences = null)
 {
+    private TaxReturn? _currentReturn;
+
     public async Task RunAsync(CancellationToken ct = default)
     {
         AnsiConsole.Write(new FigletText("tax-claw").Color(Color.Teal));
-        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
+        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/doc <path>[/][grey] to add a document, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
 
         while (!ct.IsCancellationRequested)
         {
@@ -45,6 +50,10 @@ public sealed class AppHost(
 
                 case LoadLawCommand law:
                     await LoadLawAsync(law.Year, ct);
+                    break;
+
+                case ProcessDocumentCommand pd:
+                    await ProcessDocumentAsync(pd.Path, ct);
                     break;
 
                 case ModelCommand model:
@@ -258,6 +267,63 @@ public sealed class AppHost(
             $"[green]Switched model to[/] [teal]{Markup.Escape(llmOptions.Model)}[/][grey]{effortNote} (conversation context preserved).[/]");
     }
 
+    private async Task ProcessDocumentAsync(string path, CancellationToken ct)
+    {
+        if (_currentReturn is not { } current)
+        {
+            AnsiConsole.MarkupLine("[yellow]No active project. Start one first with [/][teal]/new <year>[/][yellow].[/]");
+            return;
+        }
+
+        string expanded = ExpandPath(path);
+        if (!File.Exists(expanded))
+        {
+            AnsiConsole.MarkupLine($"[yellow]File not found: {Markup.Escape(expanded)}[/]");
+            return;
+        }
+
+        DocumentResult result;
+        try
+        {
+            byte[] bytes = await File.ReadAllBytesAsync(expanded, ct);
+            string name = Path.GetFileName(expanded);
+            var doc = SourceDocument.FromBytes(name, bytes);
+            result = await AnsiConsole.Status().StartAsync("processing document…",
+                async _ => await documentPipeline.ProcessAsync(doc, current, name, ct));
+        }
+        catch (NotSupportedException ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]{Markup.Escape(ex.Message)}[/]");
+            return;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Could not process document: {Markup.Escape(ex.Message)}[/]");
+            return;
+        }
+
+        AnsiConsole.MarkupLine(
+            $"[grey]Classified as[/] [teal]{result.Type}[/] [grey](confidence {result.Confidence:0.0}).[/]");
+
+        if (result.Validation.IsValid)
+        {
+            _currentReturn = result.Return;
+            AnsiConsole.MarkupLine($"[green]Added to the return.[/] [grey]Income items: {_currentReturn.Incomes.Count}.[/]");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine(
+                $"[yellow]Missing required fields: {Markup.Escape(string.Join(", ", result.Validation.MissingFields))}. "
+                + "Not added — please confirm or fill these.[/]");
+        }
+    }
+
+    private static string ExpandPath(string path) =>
+        path.StartsWith('~')
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), path[1..].TrimStart('/', '\\'))
+            : path;
+
     private async Task CreateProjectAsync(TaxYear year, CancellationToken ct)
     {
         Profile profile = await profiles.LoadAsync(ct) ?? PromptForProfile();
@@ -273,6 +339,7 @@ public sealed class AppHost(
         try
         {
             var project = await projects.CreateAsync(year, profile, ct);
+            _currentReturn = new TaxReturn(year);
             AnsiConsole.MarkupLine($"[green]Created project[/] [teal]{project.Id}[/] [grey](status: {project.Status})[/].");
         }
         catch (InvalidOperationException ex)

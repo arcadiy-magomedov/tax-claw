@@ -29,6 +29,20 @@ public class CommandRouterTests
     }
 
     [Fact]
+    public void Parses_doc_command_with_a_path()
+    {
+        var command = CommandRouter.Parse("/doc ~/statements/dividend.txt");
+        var doc = Assert.IsType<ProcessDocumentCommand>(command);
+        Assert.Equal("~/statements/dividend.txt", doc.Path);
+    }
+
+    [Fact]
+    public void Doc_without_a_path_becomes_an_error()
+    {
+        Assert.IsType<UnknownCommand>(CommandRouter.Parse("/doc"));
+    }
+
+    [Fact]
     public void Parses_quit_command()
     {
         Assert.IsType<QuitCommand>(CommandRouter.Parse("/quit"));

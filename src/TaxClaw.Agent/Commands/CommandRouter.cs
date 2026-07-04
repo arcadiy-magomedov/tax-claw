@@ -22,6 +22,9 @@ public static class CommandRouter
             "/quit" or "/exit" => new QuitCommand(),
             "/new" => ParseNew(parts),
             "/law" => ParseLaw(parts),
+            "/doc" => parts.Length > 1 && parts[1].Trim().Length > 0
+                ? new ProcessDocumentCommand(parts[1].Trim())
+                : new UnknownCommand("Usage: /doc <path>, e.g. /doc ~/statements/dividend.txt"),
             "/model" or "/models" => new ModelCommand(parts.Length > 1 ? parts[1].Trim() : null),
             _ => new UnknownCommand($"Unknown command '{verb}'.")
         };
