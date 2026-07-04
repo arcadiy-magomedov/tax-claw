@@ -1,6 +1,12 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Pin transitive packages to the central version too. Without this, a project that pulls in
+         GitHub.Copilot.SDK only transitively (e.g. TaxClaw.Tui, via Microsoft.Agents.AI.GitHub.Copilot)
+         resolves the nuspec-declared minimum version instead of ours, so two different Copilot CLI
+         binaries (one per resolved SDK version) land at the same runtimes/<rid>/native/copilot path
+         and single-file publish fails with NETSDK1152. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />

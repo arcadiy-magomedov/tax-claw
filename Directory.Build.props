@@ -7,4 +7,22 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
+
+  <!--
+    Microsoft.Agents.AI.GitHub.Copilot ships a build-transitive bridge that imports
+    GitHub.Copilot.SDK's own build/ targets (which download the Copilot CLI binary) — see
+    Microsoft.Agents.AI.GitHub.Copilot.targets. Because that bridge hardcodes the SDK version it
+    was packaged against (_MicrosoftAgentsAICopilotSdkPackagedVersion, currently 1.0.0) rather than
+    honoring CPM/NuGet's resolved version, a project that references GitHub.Copilot.SDK directly
+    (TaxClaw.Llm, pinned centrally to 1.0.1) and one that only pulls it in transitively (TaxClaw.Tui,
+    via Microsoft.Agents.AI.GitHub.Copilot) end up downloading TWO DIFFERENT Copilot CLI versions —
+    which then collide at the same runtimes/<rid>/native/copilot output path (NETSDK1152) on
+    single-file publish. The bridge file supports overriding this via
+    $(_MicrosoftAgentsAICopilotSdkVersion); pin it to match the centrally managed
+    GitHub.Copilot.SDK version in Directory.Packages.props so every project resolves the SAME CLI
+    binary. Keep these two values in sync when bumping GitHub.Copilot.SDK.
+  -->
+  <PropertyGroup>
+    <_MicrosoftAgentsAICopilotSdkVersion>1.0.1</_MicrosoftAgentsAICopilotSdkVersion>
+  </PropertyGroup>
 </Project>

@@ -18,6 +18,16 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!--
+      TaxClaw.Llm is a library — it references GitHub.Copilot.SDK only for its managed types
+      (CopilotClient etc.), never runs standalone, and is never published. Skip the SDK's own
+      CLI-binary download/embed here so only the final executable (TaxClaw.Tui, via the
+      Microsoft.Agents.AI.GitHub.Copilot buildTransitive bridge) downloads and embeds the Copilot
+      CLI. Without this, both projects independently produce a "runtimes/<rid>/native/copilot"
+      Content item — Llm's copy flows into Tui's output via ProjectReference, colliding with Tui's
+      own copy at the same relative path and failing single-file publish with NETSDK1152.
+    -->
+    <CopilotSkipCliDownload>true</CopilotSkipCliDownload>
   </PropertyGroup>
 
 </Project>
