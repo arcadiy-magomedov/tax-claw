@@ -7,6 +7,7 @@
     <Project Path="src/TaxClaw.Documents/TaxClaw.Documents.csproj" />
     <Project Path="src/TaxClaw.Law/TaxClaw.Law.csproj" />
     <Project Path="src/TaxClaw.Llm/TaxClaw.Llm.csproj" />
+    <Project Path="src/TaxClaw.Memory/TaxClaw.Memory.csproj" />
     <Project Path="src/TaxClaw.Storage/TaxClaw.Storage.csproj" />
     <Project Path="src/TaxClaw.Tui/TaxClaw.Tui.csproj" />
   </Folder>
@@ -17,6 +18,7 @@
     <Project Path="tests/TaxClaw.Documents.Tests/TaxClaw.Documents.Tests.csproj" />
     <Project Path="tests/TaxClaw.Law.Tests/TaxClaw.Law.Tests.csproj" />
     <Project Path="tests/TaxClaw.Llm.Tests/TaxClaw.Llm.Tests.csproj" />
+    <Project Path="tests/TaxClaw.Memory.Tests/TaxClaw.Memory.Tests.csproj" />
     <Project Path="tests/TaxClaw.Storage.Tests/TaxClaw.Storage.Tests.csproj" />
   </Folder>
 </Solution>
