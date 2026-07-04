@@ -13,15 +13,19 @@ namespace TaxClaw.Law;
 /// <b>in-force</b> edition. The active edition is resolved dynamically (from the open project),
 /// not captured at construction, so switching projects switches the applicable law.
 /// </summary>
-public sealed class LawTools(ILawCorpus corpus, ILawRetriever retriever, Func<LawVersion> activeEdition)
+public sealed class LawTools(ILawCorpus corpus, ILawRetriever retriever, Func<LawVersion?> activeEdition)
 {
     private const int SnippetLength = 400;
+    private const string NoEdition = "No law is loaded for the active project. Load it with /law <year>.";
 
     [Description("Return the exact full text and citation of a Czech tax-law section (e.g. \"§ 6\") "
         + "for the active edition. Use this when you already know the section number.")]
     public Task<string> LookupLaw([Description("section id, e.g. \"§ 6\"")] string section)
     {
-        LawVersion version = activeEdition();
+        if (activeEdition() is not { } version)
+        {
+            return Task.FromResult(NoEdition);
+        }
         LawSection? found = corpus.Resolve(Normalize(section), version);
         return Task.FromResult(found is null
             ? $"Section '{section}' not found in edition {version.Eli}."
@@ -34,7 +38,10 @@ public sealed class LawTools(ILawCorpus corpus, ILawRetriever retriever, Func<La
         [Description("query in Czech legal terminology")] string queryCz,
         [Description("max sections to return")] int limit = 5)
     {
-        LawVersion version = activeEdition();
+        if (activeEdition() is not { } version)
+        {
+            return Task.FromResult(NoEdition);
+        }
         IReadOnlyList<LawSearchResult> results = retriever.Search(queryCz, version, limit);
         if (results.Count == 0)
         {

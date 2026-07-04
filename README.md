@@ -56,6 +56,26 @@ dotnet run --project src/TaxClaw.Tui -- --ask "How are RSUs taxed in Czechia?"
 TAXCLAW_Llm__Provider=ollama TAXCLAW_Llm__Model=llama3.1 dotnet run --project src/TaxClaw.Tui
 ```
 
+## Law grounding
+
+The agent's tax reasoning is grounded in the **in-force Czech Income Tax Act (586/1992)**, imported
+from the official **[e-Sbírka](https://e-sbirka.gov.cz) open data** (public-domain, structured by §).
+Load the legislation for a tax year in the TUI:
+
+```
+/law 2027
+```
+
+This pins the edition in force for that year and gives the agent two tools:
+
+- `lookup_law <§>` — exact text + citation of a section (the primary, addressed path);
+- `search_law <czech query>` — keyword search (FTS5) for discovery; the query must be in Czech
+  legal terms.
+
+Every answer's `§` citations are checked against the loaded edition; citations that don't resolve
+are flagged for you to verify (they are never silently trusted). See the retrieval measurement in
+[`tools/law-retrieval-eval/`](tools/law-retrieval-eval/).
+
 ## Test
 
 ```bash

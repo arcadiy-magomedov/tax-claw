@@ -2,6 +2,8 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.Configuration;
 using TaxClaw.Agent;
 using TaxClaw.Core.Model;
+using TaxClaw.Law;
+using TaxClaw.Law.Ingest;
 using TaxClaw.Llm;
 using TaxClaw.Storage;
 using TaxClaw.Tui;
@@ -27,7 +29,14 @@ IConfiguration config = new ConfigurationBuilder()
 config.GetSection("Llm").Bind(llmOptions);
 
 var factory = new AgentFactory(llmOptions);
-var tools = MathTools.CreateTools();
+
+// Law grounding: the session starts empty and is populated by /law <year>; its tools (lookup_law,
+// search_law) and claims checker bind to it once and follow the active edition.
+var lawSession = new LawSession();
+using var httpClient = new HttpClient();
+ILawSource lawSource = ESbirkaSource.Http(httpClient);
+
+var tools = MathTools.CreateTools().Concat(lawSession.Tools.CreateTools()).ToList();
 AIAgent BuildAgent() => factory.CreateAgent(Prompts.System, tools);
 await using var agent = new TaxClawAgent(BuildAgent());
 
@@ -59,4 +68,4 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
 await new AppHost(
     agent, profiles, projects, llmOptions,
-    BuildAgent, factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);
+    BuildAgent, lawSession, lawSource, factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);

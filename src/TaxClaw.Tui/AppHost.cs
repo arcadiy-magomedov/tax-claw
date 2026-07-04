@@ -4,6 +4,9 @@ using TaxClaw.Agent;
 using TaxClaw.Agent.Commands;
 using TaxClaw.Core.Model;
 using TaxClaw.Core.Storage;
+using TaxClaw.Law;
+using TaxClaw.Law.Ingest;
+using TaxClaw.Law.Model;
 using TaxClaw.Llm;
 using Profile = TaxClaw.Core.Model.Profile;
 
@@ -16,13 +19,15 @@ public sealed class AppHost(
     IProjectStore projects,
     LlmOptions llmOptions,
     Func<AIAgent> buildAgent,
+    LawSession lawSession,
+    ILawSource lawSource,
     IModelCatalog? modelCatalog = null,
     Func<CancellationToken, Task>? persistPreferences = null)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
         AnsiConsole.Write(new FigletText("tax-claw").Color(Color.Teal));
-        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
+        AnsiConsole.MarkupLine("[grey]Type [/][teal]/new 2027[/][grey] to start a project, [/][teal]/law 2027[/][grey] to load legislation, [/][teal]/model[/][grey] to change model, or just chat. [/][teal]/quit[/][grey] to exit.[/]");
 
         while (!ct.IsCancellationRequested)
         {
@@ -38,6 +43,10 @@ public sealed class AppHost(
                     await CreateProjectAsync(np.Year, ct);
                     break;
 
+                case LoadLawCommand law:
+                    await LoadLawAsync(law.Year, ct);
+                    break;
+
                 case ModelCommand model:
                     await HandleModelAsync(model.ModelId, ct);
                     break;
@@ -45,7 +54,7 @@ public sealed class AppHost(
                 case ChatCommand chat when chat.Message.Length > 0:
                     await AnsiConsole.Status().StartAsync("thinking…", async _ =>
                     {
-                        string reply = await agent.SendAsync(chat.Message, ct);
+                        string reply = lawSession.Annotate(await agent.SendAsync(chat.Message, ct));
                         AnsiConsole.MarkupLine($"[white]{Markup.Escape(reply)}[/]");
                     });
                     break;
@@ -55,6 +64,30 @@ public sealed class AppHost(
                     break;
             }
         }
+    }
+
+    /// <summary>
+    /// Loads the Income Tax Act (586/1992) edition in force at the start of the given tax year from
+    /// e-Sbírka into the law session, so the agent's tools and grounding checks work for that year.
+    /// (Precise year-end edition selection via an edition catalog is a documented refinement.)
+    /// </summary>
+    private async Task LoadLawAsync(TaxYear year, CancellationToken ct)
+    {
+        var edition = new LawVersion("586/1992", new DateOnly(year.Year, 1, 1));
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync($"loading law for {year}…", async _ => await lawSession.LoadAsync(lawSource, edition, ct));
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Could not load law: {Markup.Escape(ex.Message)}[/]");
+            return;
+        }
+
+        AnsiConsole.MarkupLine(lawSession.SectionCount == 0
+            ? $"[yellow]No sections found for {Markup.Escape(edition.Eli)} (is {year} an edition boundary?).[/]"
+            : $"[green]Loaded[/] [teal]{Markup.Escape(edition.Eli)}[/] [grey]({lawSession.SectionCount} sections).[/]");
     }
 
     private async Task HandleModelAsync(string? modelId, CancellationToken ct)

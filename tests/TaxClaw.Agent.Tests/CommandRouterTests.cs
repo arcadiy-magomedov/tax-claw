@@ -15,6 +15,20 @@ public class CommandRouterTests
     }
 
     [Fact]
+    public void Parses_law_command()
+    {
+        var command = CommandRouter.Parse("/law 2027");
+        var loadLaw = Assert.IsType<LoadLawCommand>(command);
+        Assert.Equal(TaxYear.Of(2027), loadLaw.Year);
+    }
+
+    [Fact]
+    public void Law_without_a_valid_year_becomes_an_error()
+    {
+        Assert.IsType<UnknownCommand>(CommandRouter.Parse("/law"));
+    }
+
+    [Fact]
     public void Parses_quit_command()
     {
         Assert.IsType<QuitCommand>(CommandRouter.Parse("/quit"));
