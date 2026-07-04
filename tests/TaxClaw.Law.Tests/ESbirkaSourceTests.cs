@@ -51,4 +51,22 @@ public class ESbirkaSourceTests
 
         Assert.Equal("§ 16", sections.Single().Section);
     }
+
+    [Fact]
+    public void ParseEditions_extracts_dates_and_skips_the_sentinel()
+    {
+        const string json = """
+        {"results":{"bindings":[
+          {"ed":{"value":"https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/1992/586/2027-01-01"}},
+          {"ed":{"value":"https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/1992/586/2026-04-01"}},
+          {"ed":{"value":"https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/1992/586/0000-00-00"}}
+        ]}}
+        """;
+
+        var editions = ESbirkaSource.ParseEditions(json, "586/1992");
+
+        Assert.Equal(2, editions.Count); // 0000-00-00 is skipped
+        Assert.Contains(new LawVersion("586/1992", new DateOnly(2027, 1, 1)), editions);
+        Assert.Contains(new LawVersion("586/1992", new DateOnly(2026, 4, 1)), editions);
+    }
 }

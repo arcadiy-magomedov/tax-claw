@@ -43,6 +43,19 @@ public sealed class LawSession : ILawCorpus, ILawRetriever, IDisposable
         SectionCount = sections.Count;
     }
 
+    /// <summary>
+    /// Selects and loads the edition governing <paramref name="taxYear"/> (D1 default: latest edition
+    /// effective by 31 Dec of that year) from the source's edition catalog.
+    /// </summary>
+    public async Task OpenForYearAsync(ILawSource source, string actNumber, int taxYear, CancellationToken ct = default)
+    {
+        IReadOnlyList<LawVersion> editions = await source.ListEditionsAsync(actNumber, ct);
+        LawVersion edition = LawVersionSet.SelectForTaxYear(editions, taxYear)
+            ?? throw new InvalidOperationException(
+                $"No edition of {actNumber} is in force for tax year {taxYear}.");
+        await LoadAsync(source, edition, ct);
+    }
+
     /// <summary>Annotates an agent answer with a grounding check against the active edition (no-op if none).</summary>
     public string Annotate(string answer) =>
         CurrentEdition is { } edition ? _checker.Annotate(answer, edition) : answer;

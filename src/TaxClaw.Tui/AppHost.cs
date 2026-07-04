@@ -76,17 +76,16 @@ public sealed class AppHost(
     }
 
     /// <summary>
-    /// Loads the Income Tax Act (586/1992) edition in force at the start of the given tax year from
-    /// e-Sbírka into the law session, so the agent's tools and grounding checks work for that year.
-    /// (Precise year-end edition selection via an edition catalog is a documented refinement.)
+    /// Loads the Income Tax Act (586/1992) edition governing the given tax year (D1 default: latest
+    /// edition effective by 31 Dec) from e-Sbírka into the law session, so the agent's tools and
+    /// grounding checks work for that year.
     /// </summary>
     private async Task LoadLawAsync(TaxYear year, CancellationToken ct)
     {
-        var edition = new LawVersion("586/1992", new DateOnly(year.Year, 1, 1));
         try
         {
-            await AnsiConsole.Status()
-                .StartAsync($"loading law for {year}…", async _ => await lawSession.LoadAsync(lawSource, edition, ct));
+            await AnsiConsole.Status().StartAsync($"loading law for {year}…",
+                async _ => await lawSession.OpenForYearAsync(lawSource, "586/1992", year.Year, ct));
         }
         catch (Exception ex)
         {
@@ -94,9 +93,10 @@ public sealed class AppHost(
             return;
         }
 
+        string eli = lawSession.CurrentEdition?.Eli ?? "(none)";
         AnsiConsole.MarkupLine(lawSession.SectionCount == 0
-            ? $"[yellow]No sections found for {Markup.Escape(edition.Eli)} (is {year} an edition boundary?).[/]"
-            : $"[green]Loaded[/] [teal]{Markup.Escape(edition.Eli)}[/] [grey]({lawSession.SectionCount} sections).[/]");
+            ? $"[yellow]No sections found for {Markup.Escape(eli)}.[/]"
+            : $"[green]Loaded[/] [teal]{Markup.Escape(eli)}[/] [grey]({lawSession.SectionCount} sections, in force for tax year {year}).[/]");
     }
 
     private async Task HandleModelAsync(string? modelId, CancellationToken ct)
