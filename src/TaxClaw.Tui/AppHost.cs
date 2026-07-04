@@ -28,7 +28,8 @@ public sealed class AppHost(
     DocumentPipeline documentPipeline,
     SessionState sessionState,
     IModelCatalog? modelCatalog = null,
-    Func<CancellationToken, Task>? persistPreferences = null)
+    Func<CancellationToken, Task>? persistPreferences = null,
+    string? epoXsdPath = null)
 {
     private TaxReturn? _currentReturn;
 
@@ -293,7 +294,9 @@ public sealed class AppHost(
                     await File.WriteAllTextAsync(expanded, new SummaryExporter().Export(ret), ct);
                     break;
                 case "xml":
-                    await File.WriteAllTextAsync(expanded, new XmlExporter().Export(ret), ct);
+                    string xml = new XmlExporter().Export(ret);
+                    await File.WriteAllTextAsync(expanded, xml, ct);
+                    ReportXmlValidation(xml);
                     break;
                 case "pdf":
                     await File.WriteAllBytesAsync(expanded, new PdfExporter().Export(ret), ct);
@@ -310,6 +313,22 @@ public sealed class AppHost(
         }
 
         AnsiConsole.MarkupLine($"[green]Exported[/] [teal]{Markup.Escape(format)}[/] [grey]→ {Markup.Escape(expanded)}[/].");
+    }
+
+    private void ReportXmlValidation(string xml)
+    {
+        EpoSchema schema = EpoSchema.Resolve(epoXsdPath);
+        XsdReport report = XsdValidator.Validate(xml, schema.Text);
+        if (report.IsValid)
+        {
+            AnsiConsole.MarkupLine($"[grey]Validated against {Markup.Escape(schema.Source)}.[/]");
+        }
+        else
+        {
+            string detail = string.Join("; ", report.Errors.Take(3));
+            AnsiConsole.MarkupLine(
+                $"[yellow]Note: XML did not validate against {Markup.Escape(schema.Source)}: {Markup.Escape(detail)}[/]");
+        }
     }
 
     private async Task ProcessDocumentAsync(string path, CancellationToken ct)

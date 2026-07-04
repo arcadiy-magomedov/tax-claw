@@ -23,4 +23,9 @@ public sealed class StorageRoot
     public string ProjectDirectory(string id) => System.IO.Path.Combine(ProjectsDirectory, id);
 
     public string ProjectFile(string id) => System.IO.Path.Combine(ProjectDirectory(id), "project.json");
+
+    public string SchemasDirectory => System.IO.Path.Combine(Path, "schemas");
+
+    /// <summary>Where the user drops the official EPO XSD for form 25 5405 (DPFDP5).</summary>
+    public string EpoXsdFile => System.IO.Path.Combine(SchemasDirectory, "dpfdp5_epo2.xsd");
 }

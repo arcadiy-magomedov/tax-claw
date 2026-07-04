@@ -99,4 +99,4 @@ Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 await new AppHost(
     agent, profiles, projects, llmOptions,
     BuildAgent, lawSession, lawSource, documentPipeline, sessionState,
-    factory.CreateCatalog(), PersistPreferencesAsync).RunAsync(cts.Token);
+    factory.CreateCatalog(), PersistPreferencesAsync, root.EpoXsdFile).RunAsync(cts.Token);

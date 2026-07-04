@@ -131,17 +131,24 @@ not an in-app registry.
 **Privacy:** on the cloud path, a PII-redacting middleware pseudonymizes structured personal data
 (rodné číslo, IBAN) before it leaves and restores it in the reply; local providers (Ollama) are
 never wrapped. Toggle with `TAXCLAW_Llm__RedactPii` (default on). Regex redaction is best-effort
-(structured IDs, not free-text names) — the strong guarantee is local mode. *Note:* the default
-GitHub Copilot path goes through the agent-framework provider, so redaction there is a follow-up
-(needs a framework middleware).
+(structured IDs, not free-text names) — the strong guarantee is local mode. Redaction runs at the
+**agent-run boundary**, so it covers every provider uniformly, including the default GitHub Copilot
+path (which is reached through the agent-framework provider, not an `IChatClient`).
 
 **Exporters** project the canonical return; each is a milestone behind one seam:
 
 ```
 /export summary ~/out/2027.md     # markdown with per-line traces + § citations
 /export pdf     ~/out/2027.pdf     # form 25 5405 (QuestPDF)
-/export xml     ~/out/2027.xml     # portal XML, validated against an XSD
+/export xml     ~/out/2027.xml     # portal XML, validated against the EPO XSD
 ```
+
+The official EPO schema for form 25 5405 (`dpfdp5_epo2.xsd`) is published — and versioned per tax
+year — on the MOJE daně documentation portal ("Popis struktury souborů"). Drop the downloaded file
+at `~/.tax-claw/schemas/dpfdp5_epo2.xsd` and `/export xml` validates against it automatically; absent
+that, a built-in stand-in validates the current interim shape. The official schema's real element
+structure is `Pisemnost → DPFDP5 → Veta_*`, which the exporter emits once the real form-line model
+lands — until then, validating the interim shape against the official XSD is expected to fail.
 
 The XML validates against a schema; the exact EPO/MOJE daně XSD is wired once obtained (spec §14).
 

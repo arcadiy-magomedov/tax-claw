@@ -13,25 +13,7 @@ public class XmlExporterTests
         return new TaxReturn(TaxYear.Of(2027)).WithLine("r38", 100000m, trace);
     }
 
-    private const string Xsd =
-        """
-        <?xml version="1.0" encoding="utf-8"?>
-        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-          <xs:element name="Declaration">
-            <xs:complexType>
-              <xs:sequence>
-                <xs:element name="Line" maxOccurs="unbounded">
-                  <xs:complexType>
-                    <xs:attribute name="id" type="xs:string" use="required"/>
-                    <xs:attribute name="value" type="xs:decimal" use="required"/>
-                  </xs:complexType>
-                </xs:element>
-              </xs:sequence>
-              <xs:attribute name="year" type="xs:int" use="required"/>
-            </xs:complexType>
-          </xs:element>
-        </xs:schema>
-        """;
+    private const string Xsd = EpoSchema.StandInXsd;
 
     [Fact]
     public void Generated_xml_contains_the_year_and_lines()
