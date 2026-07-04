@@ -10,7 +10,23 @@ See the design spec in [`docs/superpowers/specs/2026-06-15-tax-claw-design.md`](
 - .NET 10 SDK
 - (Optional, for chat) a running [Ollama](https://ollama.com) with a model pulled, e.g. `ollama pull llama3.1`
 
-## Run
+## Install
+
+Prebuilt, self-contained binaries (macOS, Linux, Windows; no .NET runtime required) are published to
+[GitHub Releases](https://github.com/arcadiy-magomedov/tax-claw/releases) on every version tag.
+
+macOS / Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/arcadiy-magomedov/tax-claw/main/scripts/install.sh | sh
+taxclaw
+```
+
+Windows: download `tax-claw-<version>-win-x64.zip` (or `win-arm64`) from the
+[latest release](https://github.com/arcadiy-magomedov/tax-claw/releases/latest), extract it anywhere,
+and run `taxclaw.exe`.
+
+## Run from source
 
 ```bash
 dotnet run --project src/TaxClaw.Tui
@@ -163,8 +179,6 @@ that, a built-in stand-in validates the current interim shape. The official sche
 structure is `Pisemnost → DPFDP5 → Veta_*`, which the exporter emits once the real form-line model
 lands — until then, validating the interim shape against the official XSD is expected to fail.
 
-The XML validates against a schema; the exact EPO/MOJE daně XSD is wired once obtained (spec §14).
-
 ## Test
 
 ```bash
@@ -174,8 +188,24 @@ dotnet test
 ## Package management
 
 This repo uses **Central Package Management** — all package versions live in
-[`Directory.Packages.props`](Directory.Packages.props). NuGet lock files
-(`packages.lock.json`) are committed for reproducible restores.
+[`Directory.Packages.props`](Directory.Packages.props), including transitive pinning
+(`CentralPackageTransitivePinningEnabled`). NuGet lock files (`packages.lock.json`) are committed for
+reproducible restores.
+
+## Releases
+
+Pushing a tag matching `v*.*.*` triggers [`.github/workflows/release.yml`](.github/workflows/release.yml):
+it runs the full test suite, then publishes self-contained single-file binaries for
+`osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `win-x64`, and `win-arm64`, and attaches them
+(plus `SHA256SUMS` and the install script) to a new GitHub Release.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: restore (with known-vulnerability
+advisories escalated to build errors), build, and test.
 
 ## Data location
 

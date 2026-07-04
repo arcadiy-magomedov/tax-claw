@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        # Escalate NuGet vulnerability advisories (NU1901=low .. NU1904=critical) from warnings to
+        # errors, so restore genuinely FAILS the build when a dependency has a known vulnerability.
+        # `dotnet list package --vulnerable` alone does NOT fail on findings (verified: it exits 0
+        # even when it reports a high-severity package) so it can't be used as a gate by itself.
+        # %3B escapes the MSBuild property-list separator (a literal `;` gets split by the CLI).
+        run: dotnet restore --locked-mode "-p:WarningsAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904"
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        run: dotnet test --no-build -c Release --nologo
+
+      - name: Report vulnerable packages (informational)
+        if: always()
+        run: dotnet list package --vulnerable --include-transitive

@@ -20,6 +20,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Nicer name for the published/installed binary: `taxclaw` instead of `TaxClaw.Tui`. -->
+    <AssemblyName>taxclaw</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
